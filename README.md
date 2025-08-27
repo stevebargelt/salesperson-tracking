@@ -61,17 +61,26 @@ npx nx dev admin-web
 # Start mobile app development server  
 npx nx start mobile
 
-# Run mobile app on iOS simulator
-npx expo run:ios --project-dir apps/mobile
+# Run mobile app on iOS simulator (from any directory)
+npx nx ios mobile
+
+# Run on connected iOS device (required for background location testing)
+npx nx ios-device mobile
 ```
 
-### **3. Build iOS App with Native Module**
+### **3. iOS Development Commands**
 ```bash
-# Install pods with native modules
-cd apps/mobile/ios && pod install
+# Install CocoaPods dependencies
+npx nx pod-install mobile
 
-# Build and run on device (required for background location)
-npx expo run:ios --project-dir apps/mobile --device
+# Type checking
+npx nx type-check mobile
+
+# Linting
+npx nx lint mobile
+
+# Alternative iOS commands (same as above)
+npx nx run-ios mobile    # Same as 'npx nx ios mobile'
 ```
 
 ## 📱 **Mobile App Features**

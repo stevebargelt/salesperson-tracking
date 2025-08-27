@@ -7,6 +7,7 @@ import { Card } from "@/components/Card"
 import { Button } from "@/components/Button"
 import { Switch } from "@/components/Toggle/Switch"
 import { locationService } from "@/services/LocationService"
+import { supabaseHelpers } from "@/services/SupabaseService"
 import { useAuth } from "@/context/AuthContext"
 import type { MainTabScreenProps } from "@/navigators/MainTabNavigator"
 import type { ThemedStyle } from "@/theme/types"
@@ -28,12 +29,23 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
   } = useAppTheme()
 
   useEffect(() => {
-    // Set user ID and check initial tracking status
-    if (authEmail) {
-      locationService.setUserId(authEmail) // Using email as user ID for now
+    // Get the actual user UUID instead of email
+    const setupUserTracking = async () => {
+      if (authEmail) {
+        try {
+          const { data: { user } } = await supabaseHelpers.getCurrentUser()
+          if (user) {
+            locationService.setUserId(user.id) // Use actual UUID
+          }
+        } catch (error) {
+          console.error('Failed to get current user:', error)
+        }
+      }
+      setIsTracking(locationService.getTrackingStatus())
+      updateQueueStatus()
     }
-    setIsTracking(locationService.getTrackingStatus())
-    updateQueueStatus()
+
+    setupUserTracking()
 
     // Update queue status every 30 seconds
     const interval = setInterval(updateQueueStatus, 30000)

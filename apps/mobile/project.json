@@ -18,6 +18,20 @@
         "cwd": "apps/mobile"
       }
     },
+    "run-ios": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx expo run:ios",
+        "cwd": "apps/mobile"
+      }
+    },
+    "ios-device": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx expo run:ios --device",
+        "cwd": "apps/mobile"
+      }
+    },
     "prebuild": {
       "executor": "nx:run-commands",
       "options": {

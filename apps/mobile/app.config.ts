@@ -6,6 +6,9 @@ import { ExpoConfig, ConfigContext } from "@expo/config"
  */
 require("ts-node/register")
 
+// Load environment variables from workspace root .env file
+require('dotenv').config({ path: '../../.env' })
+
 /**
  * @param config ExpoConfig coming from the static config app.json if it exists
  *
@@ -17,6 +20,11 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
 
   return {
     ...config,
+    extra: {
+      ...config.extra,
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    },
     ios: {
       ...config.ios,
       // This privacyManifests is to get you started.

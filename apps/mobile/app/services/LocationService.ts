@@ -2,6 +2,7 @@ import Geolocation, { GeolocationResponse, GeolocationError } from '@react-nativ
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './SupabaseService';
 import { nativeLocationManager } from './NativeLocationManager';
+import Constants from 'expo-constants';
 
 interface QueuedLocationEvent {
   id: string;
@@ -54,8 +55,8 @@ export class LocationService {
       if (this.useNativeModule && nativeLocationManager.isAvailable()) {
         console.log('📍 Starting native iOS background location tracking...');
         
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
-        const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY_HERE';
+        const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
+        const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY_HERE';
         
         const success = await nativeLocationManager.startBackgroundTracking(
           this.userId,
@@ -237,8 +238,11 @@ export class LocationService {
       .insert(locationEvent);
 
     if (error) {
+      console.error('📍 Supabase insert error details:', error);
       throw new Error(`Failed to save location event: ${error.message}`);
     }
+    
+    console.log('📍 Location event saved successfully to Supabase');
   }
 
   // Queue location event for later sync
