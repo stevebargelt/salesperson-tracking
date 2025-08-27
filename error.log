@@ -1,0 +1,8 @@
+
+ NX  Generating @nx/workspace:ci-workflow
+
+
+ NX   Property 'ci' does not match the schema. 'skip,skip' should be one of github,circleci,azure,bitbucket-pipelines,gitlab.
+
+
+
