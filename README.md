@@ -1,77 +1,171 @@
-# SalespersonTracking
+# 📱 Salesperson Tracking System
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A comprehensive location-based tracking system for field sales teams, built with React Native, React Admin Dashboard, and Supabase backend.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## 🏗️ **System Architecture**
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+### **Frontend Applications**
+- **📱 Mobile App** (`apps/mobile`) - Ignite-based React Native iOS app
+- **🖥️ Admin Dashboard** (`apps/admin-web`) - React web app for management
 
-## Finish your CI setup
+### **Backend & Database**  
+- **🛢️ Supabase** - PostgreSQL + PostGIS for spatial operations
+- **⚡ Automated Processing** - pg_cron jobs every 5 minutes
+- **🔄 Real-time Sync** - Background location event correlation
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/dRzrtdKxJq)
+### **Shared Libraries**
+- **📦 Types** (`libs/shared/types`) - Shared TypeScript interfaces
+- **🔌 Supabase Client** (`libs/shared/supabase`) - Database helpers
+- **🛠️ Utilities** (`libs/shared/utils`) - Common functions
 
+## 📍 **Location Tracking Features**
 
-## Run tasks
+### **🔋 Always-On Location Tracking**
+- **Native iOS Module**: Custom Swift implementation for true background tracking
+- **Significant Location Changes (SLC)**: Battery-efficient iOS location monitoring
+- **App State Coverage**: Works when app is active, backgrounded, OR completely closed
+- **Automatic Restart**: iOS automatically relaunches app for location updates
 
-To run tasks with Nx use:
+### **📊 Intelligent Processing**
+- **Server-side Correlation**: Backend processes location events into visits
+- **PostGIS Spatial Queries**: Precise geofencing with confidence scoring
+- **Automated Job**: Processes events every 5 minutes via pg_cron
+- **Offline Queueing**: Location events stored locally when network unavailable
 
-```sh
-npx nx <target> <project-name>
+### **🎯 Visit Detection**
+- **Geofence Entry/Exit**: Automatic visit creation when entering account radius
+- **Confidence Scoring**: Only processes high-confidence location correlations
+- **Overlap Prevention**: Smart logic prevents duplicate visits
+- **Duration Calculation**: Automatic check-in/check-out timing
+
+## 🚀 **Getting Started**
+
+### **1. Database Setup**
+```bash
+# Run all migrations in Supabase SQL Editor
+# See SUPABASE_SETUP.md for detailed instructions
 ```
 
-For example:
+**Required Migrations** (run in order):
+1. `001_initial_schema.sql` - Core tables and types
+2. `002_row_level_security.sql` - Security policies  
+3. `003_spatial_functions.sql` - PostGIS and visit detection
+4. `004_analytics_functions.sql` - Reporting and metrics
+5. **`005_automated_processing.sql`** ⭐ - **Every 5-minute automation**
 
-```sh
-npx nx build myproject
+### **2. Start Applications**
+```bash
+# Start admin web app (http://localhost:4200)
+npx nx dev admin-web
+
+# Start mobile app development server  
+npx nx start mobile
+
+# Run mobile app on iOS simulator
+npx expo run:ios --project-dir apps/mobile
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### **3. Build iOS App with Native Module**
+```bash
+# Install pods with native modules
+cd apps/mobile/ios && pod install
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+# Build and run on device (required for background location)
+npx expo run:ios --project-dir apps/mobile --device
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+## 📱 **Mobile App Features**
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+### **🏠 Dashboard Tab**
+- **Real-time metrics**: Today's visits, total hours, weekly stats
+- **Last visit info**: Most recent account visited with date
+- **Live data**: Fetched from Supabase visits table
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
+### **📍 Tracking Tab**  
+- **Native tracking toggle**: Enables always-on iOS location monitoring
+- **Status monitoring**: Shows native module status and permissions
+- **Queue management**: View and sync offline location events
+- **Manual controls**: Force sync, get current location
+
+### **🏢 Accounts Tab**
+- **Real distances**: GPS-calculated distances from current location
+- **Sorted by proximity**: Closest accounts first
+- **Account details**: Name, address, geofence radius
+- **Dynamic updates**: Refreshes as you move
+
+### **👤 Profile Tab**
+- **User information**: Email, role, account status
+- **Settings overview**: Location permissions, background refresh status  
+- **Statistics**: Total visits, weekly counts, average durations
+- **Data management**: Clear local storage, sign out
+
+## 🖥️ **Admin Dashboard Features**
+
+- **User Management**: Create and manage salesperson accounts
+- **Account Management**: Define client locations with geofences
+- **Visit Analytics**: Monitor and analyze visit data
+- **Real-time Monitoring**: Track active users and processing status
+
+## 🔧 **Technical Highlights**
+
+### **🔋 Battery Optimization**
+- **iOS SLC**: Uses system-level significant location changes
+- **Minimal processing**: Client only logs events, server correlates visits
+- **Smart throttling**: 2-minute minimum between location updates
+- **Background URL sessions**: Efficient network usage
+
+### **🛡️ Security & Privacy**
+- **Row-level security**: Users only see their own data
+- **Permission-based access**: Proper iOS location permission handling
+- **Encrypted transport**: HTTPS API calls to Supabase
+- **Local queueing**: Secure local storage for offline events
+
+### **📈 Scalability**
+- **Server-side processing**: Handles multiple users simultaneously
+- **Spatial indexing**: Optimized PostGIS queries
+- **Automated cleanup**: Prevents data overflow
+- **Monitoring tools**: Built-in health checks and metrics
+
+## 🚨 **Important Notes**
+
+### **iOS Device Testing Required**
+- **Simulator limitation**: Background location doesn't work in iOS Simulator
+- **Physical device**: Required for testing always-on tracking
+- **Developer account**: Needed for background location entitlements
+
+### **User Permissions**
+- **"Always" location access**: Required for background tracking
+- **Background App Refresh**: Must be enabled in iOS Settings
+- **Notification permissions**: For location update alerts
+
+### **Monitoring Commands**
+
+**Check automated processing status:**
+```sql
+-- Verify pg_cron job is running
+SELECT * FROM get_processing_job_status();
+
+-- Manual processing test  
+SELECT * FROM trigger_location_processing();
+
+-- Check unprocessed events
+SELECT COUNT(*) FROM location_events WHERE processed = false;
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+## 📊 **System Status**
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- ✅ **Phase 1**: Foundation complete (database, schemas, types)
+- ✅ **Phase 2**: Mobile app with native iOS always-on tracking
+- ✅ **Phase 3**: Admin dashboard for management  
+- ✅ **Phase 4**: Automated backend processing (5-minute intervals)
+- ✅ **Phase 5**: Real-time data integration
 
+**🎯 The system is production-ready for field sales location tracking!**
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+---
 
-## Install Nx Console
+## 🔗 **Related Documentation**
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **[Supabase Setup Guide](SUPABASE_SETUP.md)** - Database configuration
+- **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Development progress
+- **[iOS Device Setup](IOS_DEVICE_SETUP.md)** - Device configuration guide
