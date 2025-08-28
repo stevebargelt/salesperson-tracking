@@ -27,7 +27,8 @@
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.mobile"
+    "bundleIdentifier": "com.mobile",
+    "appleTeamId": "DAV93N6F9B"
   },
   "web": {
     "favicon": "./assets/images/app-icon-web-favicon.png",

@@ -74,6 +74,48 @@
         "command": "cd ios && pod install",
         "cwd": "apps/mobile"
       }
+    },
+    "fastlane-certificates": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane certificates",
+        "cwd": "apps/mobile"
+      }
+    },
+    "build-development": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane build_development",
+        "cwd": "apps/mobile"
+      }
+    },
+    "build-staging": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane build_staging", 
+        "cwd": "apps/mobile"
+      }
+    },
+    "build-production": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane build_production",
+        "cwd": "apps/mobile"
+      }
+    },
+    "deploy-beta": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane deploy_beta",
+        "cwd": "apps/mobile"
+      }
+    },
+    "deploy-production": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd ios && bundle exec fastlane deploy_production",
+        "cwd": "apps/mobile"
+      }
     }
   },
   "tags": ["mobile", "react-native"],

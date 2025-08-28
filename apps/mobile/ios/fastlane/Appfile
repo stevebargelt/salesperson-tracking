@@ -1,0 +1,15 @@
+# App identifier for your app
+app_identifier("com.harebrained-apps.salesforcetracker")
+
+# Apple ID for App Store Connect (commented out to force API key usage)
+# apple_id("steve@stevebargelt.com")
+
+# Team ID for App Store Connect and Developer Portal
+team_id("DAV93N6F9B") # Your development team ID
+
+# Force API key usage - disable Apple ID authentication
+ENV["FASTLANE_SKIP_2FA_UPGRADE"] = "true"
+ENV["FASTLANE_DISABLE_APPLE_ID"] = "true"
+
+# For more information about the Appfile, see:
+# https://docs.fastlane.tools/advanced/#appfile

@@ -79,9 +79,26 @@ npx nx type-check mobile
 # Linting
 npx nx lint mobile
 
-# Alternative iOS commands (same as above)
+# Alternative iOS commands (same as above)  
 npx nx run-ios mobile    # Same as 'npx nx ios mobile'
 ```
+
+### **4. Fastlane Build & Distribution**
+```bash
+# Certificate management
+npx nx fastlane-certificates mobile
+
+# Build commands
+npx nx build-development mobile    # Debug build for testing
+npx nx build-staging mobile        # Release build for QA
+npx nx build-production mobile     # App Store build
+
+# Distribution commands
+npx nx deploy-beta mobile          # Deploy to TestFlight
+npx nx deploy-production mobile    # Upload to App Store Connect
+```
+
+See **[FASTLANE_SETUP.md](FASTLANE_SETUP.md)** for complete setup instructions.
 
 ## 📱 **Mobile App Features**
 
@@ -176,5 +193,7 @@ SELECT COUNT(*) FROM location_events WHERE processed = false;
 ## 🔗 **Related Documentation**
 
 - **[Supabase Setup Guide](SUPABASE_SETUP.md)** - Database configuration
+- **[Fastlane Setup Guide](FASTLANE_SETUP.md)** - iOS build automation and certificates
+- **[iOS Native Location Setup](IOS_NATIVE_LOCATION_SETUP.md)** - Native iOS module configuration
 - **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Development progress
-- **[iOS Device Setup](IOS_DEVICE_SETUP.md)** - Device configuration guide
+- **[Security Guide](SECURITY.md)** - Environment variables and secrets management

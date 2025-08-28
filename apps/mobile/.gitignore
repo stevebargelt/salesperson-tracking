@@ -70,8 +70,23 @@ buck-out/
 .expo/*
 bin/Exponent.app
 /android
-/ios
 expo-env.d.ts
+
+# iOS build artifacts and generated files (exclude these)
+ios/build/
+ios/DerivedData/ 
+ios/Pods/
+ios/**/*.xcuserstate
+ios/**/xcuserdata/
+ios/**/.xcode.env.local
+
+# Keep iOS source code and configuration (include these)
+!ios/*.xcodeproj/
+!ios/*.xcworkspace/
+!ios/mobile/
+!ios/fastlane/
+!ios/Gemfile*
+!ios/Podfile*
 
 ## Secrets
 npm-debug.*

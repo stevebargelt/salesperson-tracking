@@ -1,0 +1,35 @@
+# Git repository for storing certificates and provisioning profiles
+# You need to create a private repository for this
+git_url("git@github.com:stevebargelt/salesperson-tracking-certificates.git") # Replace with your private repo
+
+# App identifier
+app_identifier(["com.harebrained-apps.salesforcetracker"])
+
+# Username for Apple ID
+username("steve@stevebargelt.com")
+
+# Team ID
+team_id("DAV93N6F9B")
+
+# Storage mode - git is recommended for teams
+storage_mode("git")
+
+# Ensure provisioning profiles include background location capabilities
+# Note: Background location entitlements must be enabled in App Store Connect
+# for the app identifier before running Match
+
+# Force regeneration of profiles if they don't include required capabilities
+force(false)
+force_for_new_devices(true)
+
+# Clone the certificates repo to a local temp directory
+clone_branch_directly(false)
+
+# Keychain settings - only use custom keychain for CI
+if ENV['CI']
+  keychain_name("fastlane_tmp_keychain")
+  keychain_password("temp_password_for_ci")
+end
+
+# For more information about the Matchfile, see:
+# https://docs.fastlane.tools/actions/match/

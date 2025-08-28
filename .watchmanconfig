@@ -1,0 +1,15 @@
+{
+  "root_restrict_files": [".watchmanconfig"],
+  "settle": 1500,
+  "ignore_dirs": [
+    "node_modules",
+    ".git",
+    ".nx",
+    "dist",
+    "build",
+    "coverage",
+    ".vscode",
+    ".idea"
+  ],
+  "cookie_dir": ".watchman-cache"
+}

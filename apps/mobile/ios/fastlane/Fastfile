@@ -1,0 +1,249 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+# Global API key setup - load before any actions  
+before_all do |lane|
+  # Load API key for all App Store Connect operations (avoids 2FA)
+    api_key = app_store_connect_api_key(
+      key_id: JSON.parse(File.read("./app_store_connect_api_key.json"))["key_id"],
+      issuer_id: JSON.parse(File.read("./app_store_connect_api_key.json"))["issuer_id"],
+      # key_content: JSON.parse(File.read("./app_store_connect_api_key.json"))["key"],
+      key_filepath: "/Users/stevebargelt/code/salesperson-tracking/apps/mobile/ios/fastlane/AuthKey_5R9GAYB9CU.p8"
+    )
+end
+
+default_platform(:ios)
+
+platform :ios do
+
+  # ========================================
+  # CERTIFICATE MANAGEMENT
+  # ========================================
+  
+  desc "Setup certificates and provisioning profiles"
+  lane :certificates do
+    setup_ci if ENV['CI']
+    
+    # Development certificates
+    match(
+      type: "development",
+      readonly: false,
+      force_for_new_devices: true
+    )
+    
+    # App Store distribution certificates  
+    match(
+      type: "appstore", 
+      readonly: false
+    )
+  end
+
+  desc "Sync certificates (read-only)"
+  lane :sync_certificates do
+    setup_ci if ENV['CI']
+    
+    match(type: "development", readonly: true)
+    match(type: "appstore", readonly: true)
+  end
+
+  desc "Force regenerate App Store certificates with updated entitlements"
+  lane :force_appstore_certs do
+    # Force regenerate App Store certificates and profiles
+    match(
+      type: "appstore",
+      readonly: false,
+      force: true
+    )
+  end
+
+  # ========================================
+  # BUILD LANES
+  # ========================================
+
+  desc "Build development version"
+  lane :build_development do
+    # Sync certificates
+    sync_certificates
+    
+    # Increment build number
+    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    
+    # Build the app for development
+    gym(
+      api_key: api_key,
+      scheme: "mobile",
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./builds/development",
+      output_name: "SalespersonTracker-Dev.ipa"
+    )
+  end
+
+  desc "Build staging version for internal testing"
+  lane :build_staging do
+    # Sync certificates
+    sync_certificates
+    
+    # Increment build number
+    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    
+    # Build the app
+    gym(
+      api_key: api_key,
+      scheme: "mobile",
+      configuration: "Release",
+      export_method: "ad-hoc",
+      output_directory: "./builds/staging",
+      output_name: "SalespersonTracker-Staging.ipa"
+    )
+  end
+
+  desc "Build production version for App Store"
+  lane :build_production do
+    # Sync certificates
+    sync_certificates
+    
+    # Increment build number
+    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    
+    # Update code signing for Release configuration
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      targets: ["mobile"],
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: "com.harebrained-apps.salesforcetracker",
+      profile_name: "match AppStore com.harebrained-apps.salesforcetracker",
+      build_configurations: ["Release"]
+    )
+    
+    # Build the app
+    gym(
+      scheme: "mobile",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./builds/production",
+      output_name: "SalespersonTracker-Production.ipa"
+    )
+  end
+
+  # ========================================
+  # TESTFLIGHT DEPLOYMENT
+  # ========================================
+
+  desc "Deploy to TestFlight"
+  lane :deploy_beta do
+    
+    # Build production version
+    build_production
+    
+    # Generate changelog from git
+    changelog = changelog_from_git_commits(
+      pretty: "- %s",
+      date_format: "short",
+      match_lightweight_tag: false,
+      merge_commit_filtering: "exclude_merges"
+    )
+    
+    # Upload to TestFlight
+    pilot(
+      ipa: "./builds/production/SalespersonTracker-Production.ipa",
+      changelog: changelog,
+      distribute_external: false, # Only internal testers initially
+      notify_external_testers: false,
+      skip_waiting_for_build_processing: true, # Don't wait for Apple processing
+      beta_app_description: "Professional location tracking app for field sales teams. Features automatic visit detection, real-time analytics, and battery-efficient background location monitoring.",
+      beta_app_feedback_email: "steve@stevebargelt.com",
+      demo_account_required: false,
+      beta_app_review_info: {
+        contact_email: "steve@stevebargelt.com",
+        contact_first_name: "Steve",
+        contact_last_name: "Bargelt",
+        contact_phone: "253-670-9591",
+        demo_account_name: "applestore@bargelt.com",
+        demo_account_password: "tyk!tyz4ugy6XPB2mtn",
+        notes: "This app requires location permissions to function properly. Please enable 'Always' location access when prompted."
+      }
+    )
+    
+    # Notify team
+    slack(
+      message: "🎉 New build #{get_build_number} deployed to TestFlight!",
+      success: true
+    ) if ENV['SLACK_WEBHOOK_URL']
+  end
+
+  # ========================================
+  # APP STORE DEPLOYMENT  
+  # ========================================
+
+  desc "Deploy to App Store"
+  lane :deploy_production do
+    # Ensure we're on main branch for production
+    ensure_git_branch(branch: 'main')
+    ensure_git_status_clean
+    
+    # Build production version
+    build_production
+    
+    # Upload to App Store Connect
+    deliver(
+      api_key: api_key,
+      ipa: "./builds/production/SalespersonTracker-Production.ipa",
+      submit_for_review: false, # Manual review submission
+      automatic_release: false,
+      force: true
+    )
+    
+    # Create git tag for release
+    tag_name = "v#{get_version_number(xcodeproj: 'mobile.xcodeproj')}-#{get_build_number}"
+    add_git_tag(tag: tag_name)
+    push_git_tags
+    
+    # Notify team
+    slack(
+      message: "🚀 App #{tag_name} uploaded to App Store Connect!",
+      success: true
+    ) if ENV['SLACK_WEBHOOK_URL']
+  end
+
+  # ========================================
+  # UTILITY LANES
+  # ========================================
+
+  desc "Run tests"
+  lane :test do
+    run_tests(
+      scheme: "mobile",
+      device: "iPhone 15 Pro"
+    )
+  end
+
+  desc "Take screenshots"
+  lane :screenshots do
+    capture_screenshots
+    upload_to_app_store
+  end
+
+  # ========================================
+  # ERROR HANDLING
+  # ========================================
+
+  error do |lane, exception|
+    slack(
+      message: "❌ Lane #{lane} failed: #{exception.message}",
+      success: false
+    ) if ENV['SLACK_WEBHOOK_URL']
+  end
+
+end

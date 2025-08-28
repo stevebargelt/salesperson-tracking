@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Background location tracking capabilities -->
+    <key>com.apple.developer.location.background</key>
+    <true/>
+    
+    <!-- Continuous location monitoring -->
+    <key>com.apple.developer.location.continuous</key>
+    <true/>
+    
+    <!-- Background modes for location -->
+    <key>com.apple.developer.background-modes</key>
+    <array>
+        <string>location</string>
+        <string>background-processing</string>
+    </array>
+    
+    <!-- App Groups (if needed for shared data between app and extensions) -->
+    <!-- <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.harebrained-apps.salesforcetracker</string>
+    </array> -->
+    
+    <!-- Push Notifications (if you plan to add them) -->
+    <!-- <key>com.apple.developer.aps-environment</key>
+    <string>development</string> -->
+    
+</dict>
+</plist>

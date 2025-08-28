@@ -1,0 +1,65 @@
+# App Store metadata configuration
+
+# App identifier
+app_identifier "com.harebrained-apps.salesforcetracker"
+
+# Username for App Store Connect
+username "steve@stevebargelt.com"
+
+# App Store metadata
+app_version "1.0.0"
+
+# App description
+description "Professional location tracking app for field sales teams. Features always-on background location tracking, automatic visit detection, and comprehensive analytics for sales performance monitoring."
+
+# Keywords for App Store search
+keywords "sales, tracking, location, field service, CRM, GPS, business, productivity"
+
+# Support and marketing URLs
+support_url "https://github.com/stevebargelt/salesperson-tracking"
+marketing_url "https://github.com/stevebargelt/salesperson-tracking"
+
+# Privacy policy (required for location-based apps)
+privacy_url "https://github.com/stevebargelt/salesperson-tracking/blob/main/PRIVACY_POLICY.md"
+
+# Copyright notice
+copyright "© 2024 Harebrained Apps. All rights reserved."
+
+# App category
+primary_category "BUSINESS"
+secondary_category "PRODUCTIVITY"
+
+# Age rating - Business app with location tracking
+app_rating_config_path "./metadata/app_rating_config.json"
+
+# Release notes directory
+release_notes({
+  "default" => "Bug fixes and performance improvements",
+  "en-US" => "Latest updates to improve location tracking accuracy and battery optimization"
+})
+
+# Screenshot directory
+screenshots_path "./fastlane/screenshots"
+
+# Metadata directory
+metadata_path "./fastlane/metadata"
+
+# Automatic submission settings
+submit_for_review false # Manual review submission
+automatic_release false # Manual release after approval
+submission_information({
+  add_id_info_serves_ads: false,
+  add_id_info_tracks_action: true,
+  add_id_info_tracks_install: false,
+  add_id_info_uses_idfa: false,
+  content_rights_has_rights: true,
+  content_rights_contains_third_party_content: false,
+  export_compliance_platform: "ios",
+  export_compliance_compliance_required: false,
+  export_compliance_encryption_updated: false,
+  export_compliance_app_type: nil,
+  export_compliance_uses_encryption: false
+})
+
+# For more information about the Deliverfile, see:
+# https://docs.fastlane.tools/actions/deliver/
