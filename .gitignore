@@ -110,13 +110,25 @@ yarn-error.log
 # Ruby / CocoaPods
 **/Pods/
 **/vendor/bundle/
+**/Gemfile.lock
+
+# Fastlane
+**/fastlane/builds/
+**/fastlane/test_output/
+**/fastlane/Preview.html
+**/fastlane/report.xml
+**/fastlane/screenshots/*
+**/fastlane/metadata/*
+!**/fastlane/metadata/.gitkeep
+**/fastlane/certificates/
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
 
-# Watchman cache files (can appear in root or app directories)
+# Watchman cache files and directory
 .watchman-cookie-*
 apps/**/.watchman-cookie-*
+.watchman-cache/
 
 # testing
 /coverage
@@ -124,3 +136,8 @@ apps/**/.watchman-cookie-*
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+  # App Store Connect API Key (local development)
+  **/fastlane/app_store_connect_api_key.json
+  **/*.p8
+  **/AuthKey_*.p8
