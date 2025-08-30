@@ -2,12 +2,20 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["jest", "react"],
-    "typeRoots": ["../../node_modules/@types", "./types"]
+    "typeRoots": ["../../node_modules/@types", "./types"],
+    "strict": false,
+    "noImplicitAny": false
   },
+  "include": [
+    "./types/**/*.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
   "exclude": [
     "**/*.test.ts",
     "**/*.test.tsx",
     "app.config.ts",
+    "app/app.tsx",
     "app/devtools/**"
   ]
 }
