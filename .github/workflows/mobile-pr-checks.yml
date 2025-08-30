@@ -3,13 +3,6 @@ name: Mobile PR Checks
 on:
   pull_request:
     branches: [develop, main]
-    paths:
-      - 'apps/mobile/**'
-      - 'libs/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'nx.json'
-      - 'tsconfig.base.json'
 
 concurrency:
   group: mobile-pr-${{ github.head_ref || github.run_id }}
@@ -50,4 +43,3 @@ jobs:
 
       - name: Unit Tests
         run: npx nx test mobile --runInBand --passWithNoTests
-
