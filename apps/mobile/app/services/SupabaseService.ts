@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Get environment variables from Expo config
@@ -17,6 +18,8 @@ if (!supabaseAnonKey || supabaseAnonKey.includes('YOUR_SUPABASE_ANON_KEY_HERE'))
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
+    storage: AsyncStorage,
+    storageKey: 'supabase.auth.token',
     autoRefreshToken: true,
     detectSessionInUrl: false, // React Native doesn't need URL detection
   },
@@ -47,7 +50,11 @@ export const supabaseHelpers = {
   },
 
   async getCurrentUser() {
-    return await supabase.auth.getUser();
+    // Avoid throwing AuthSessionMissingError by checking session first
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) return { data: { user: null }, error } as any;
+    if (!session) return { data: { user: null }, error: null } as any;
+    return { data: { user: session.user }, error: null } as any;
   },
 
   // Get user accounts with account details

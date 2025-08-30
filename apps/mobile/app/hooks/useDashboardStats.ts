@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { formatDuration } from "@salesperson-tracking/utils"
 import { supabase } from "@/services/SupabaseService"
 import { useAuth } from "@/context/AuthContext"
 
@@ -48,16 +49,17 @@ export const useDashboardStats = () => {
   }
 
   // Fetch dashboard statistics
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
       if (!authEmail) return
 
       setStats(prev => ({ ...prev, loading: true }))
 
-      // Get current user ID
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        console.error('User not found:', userError)
+      // Get current user ID without throwing on missing session
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
+      if (!user) {
+        // Not signed in; skip fetching
         return
       }
 
@@ -94,10 +96,10 @@ export const useDashboardStats = () => {
           .eq('user_id', userId)
           .gte('check_in_time', thisWeekStart),
 
-        // Most recent visit
+        // Most recent visit (include duration)
         supabase
           .from('visits')
-          .select('check_in_time, check_out_time, account:accounts(account_name)')
+          .select('check_in_time, check_out_time, duration_minutes, account:accounts(account_name)')
           .eq('user_id', userId)
           .order('check_in_time', { ascending: false })
           .limit(1)
@@ -121,9 +123,12 @@ export const useDashboardStats = () => {
         const accountName = (visit.account as any)?.account_name || 'Unknown Account'
         
         if (visit.check_out_time) {
-          lastVisit = `${accountName} on ${visitDate.toLocaleDateString()}`
+          const dur = typeof visit.duration_minutes === 'number' ? formatDuration(visit.duration_minutes) : undefined
+          lastVisit = `${accountName} on ${visitDate.toLocaleDateString()}${dur ? ` • ${dur}` : ''}`
         } else {
-          lastVisit = `Currently at ${accountName}`
+          // In-progress: compute elapsed minutes so far
+          const minutesSoFar = Math.max(0, Math.floor((Date.now() - visitDate.getTime()) / 60000))
+          lastVisit = `Currently at ${accountName} • ${minutesSoFar}min so far`
         }
       }
 
@@ -141,15 +146,15 @@ export const useDashboardStats = () => {
       console.error('Error fetching dashboard stats:', error)
       setStats(prev => ({ ...prev, loading: false }))
     }
-  }
+  }, [authEmail])
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     fetchDashboardStats()
-  }
+  }, [fetchDashboardStats])
 
   useEffect(() => {
     fetchDashboardStats()
-  }, [authEmail])
+  }, [fetchDashboardStats])
 
   return { stats, refresh }
 }

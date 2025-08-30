@@ -1,5 +1,6 @@
-import { FC } from "react"
-import { ViewStyle, TextStyle } from "react-native"
+import { FC, useCallback, useEffect, useState } from "react"
+import { ViewStyle, TextStyle, RefreshControl, AppState, AppStateStatus } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -12,17 +13,49 @@ import { useAppTheme } from "@/theme/context"
 interface DashboardScreenProps extends MainTabScreenProps<"Dashboard"> {}
 
 export const DashboardScreen: FC<DashboardScreenProps> = () => {
-  const { stats } = useDashboardStats()
+  const { stats, refresh } = useDashboardStats()
+  const [refreshing, setRefreshing] = useState(false)
   const {
     themed,
     theme: { colors },
   } = useAppTheme()
+
+  // Refresh when screen gains focus and periodically while focused
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+      const iv = setInterval(refresh, 30000) // every 30s while focused
+      return () => clearInterval(iv)
+    }, [refresh])
+  )
+
+  // Refresh when app comes back to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') refresh()
+    })
+    return () => sub.remove()
+  }, [refresh])
+
+  const onPullToRefresh = async () => {
+    try {
+      setRefreshing(true)
+      await refresh()
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   return (
     <Screen
       preset="auto"
       contentContainerStyle={themed($screenContentContainer)}
       safeAreaEdges={["top"]}
+      ScrollViewProps={{
+        refreshControl: (
+          <RefreshControl refreshing={refreshing} onRefresh={onPullToRefresh} />
+        ),
+      }}
     >
       <Text
         testID="dashboard-heading"

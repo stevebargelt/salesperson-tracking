@@ -1,7 +1,7 @@
 import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 
 interface BackgroundLocationManager {
-  startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string): Promise<{status: string, message: string}>;
+  startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string): Promise<{status: string, message: string}>;
   stopBackgroundTracking(): Promise<{status: string, message: string}>;
   getTrackingStatus(): Promise<{
     isTracking: boolean;
@@ -35,7 +35,7 @@ class NativeLocationManager {
   }
 
   // Start background location tracking with native iOS capabilities
-  async startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string): Promise<boolean> {
+  async startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string): Promise<boolean> {
     if (!this.isAvailable()) {
       console.warn('Native background location manager not available');
       return false;
@@ -45,7 +45,8 @@ class NativeLocationManager {
       const result = await RNBackgroundLocationManager.startBackgroundTracking(
         userId, 
         supabaseUrl, 
-        supabaseKey
+        supabaseKey,
+        accessToken
       );
       console.log('📍 Native background tracking started:', result);
       return result.status === 'started';

@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from "react"
-import { ViewStyle, TextStyle, Alert } from "react-native"
+import { ViewStyle, TextStyle, Alert, RefreshControl } from "react-native"
 import Geolocation from '@react-native-community/geolocation'
 
 import { Screen } from "@/components/Screen"
@@ -26,6 +26,7 @@ export const AccountsScreen: FC<AccountsScreenProps> = () => {
   const [accounts, setAccounts] = useState<AccountWithDistance[]>([])
   const [loading, setLoading] = useState(true)
   const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const { authEmail } = useAuth()
 
   const {
@@ -90,10 +91,9 @@ export const AccountsScreen: FC<AccountsScreenProps> = () => {
       }
       
       // Get the current Supabase user to get the real user ID
-      const { data: { user }, error: userError } = await supabaseHelpers.getCurrentUser()
-      
-      if (userError || !user) {
-        Alert.alert('Error', 'Please login again')
+      const { data: { user } } = await supabaseHelpers.getCurrentUser()
+      if (!user) {
+        // Not authenticated yet; skip fetch (screen will refresh when auth is available)
         return
       }
 
@@ -153,11 +153,89 @@ export const AccountsScreen: FC<AccountsScreenProps> = () => {
     fetchUserAccounts()
   }, [authEmail])
 
+  // Live updates: watch position and update distances as user moves
+  useEffect(() => {
+    let watchId: number | null = null
+
+    try {
+      watchId = Geolocation.watchPosition(
+        (position) => {
+          const loc = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }
+          setCurrentLocation(loc)
+
+          // Recalculate distances for existing accounts and resort
+          setAccounts((prev) => {
+            if (!prev || prev.length === 0) return prev
+
+            const updated = prev.map((account) => {
+              let distance = 'Unknown'
+              let distanceValue = Infinity
+
+              if (account.latitude && account.longitude) {
+                distanceValue = calculateDistanceFromCoords(
+                  loc.latitude,
+                  loc.longitude,
+                  account.latitude,
+                  account.longitude,
+                )
+
+                if (distanceValue < 0.1) {
+                  distance = `${Math.round(distanceValue * 5280)} ft`
+                } else {
+                  distance = `${distanceValue.toFixed(1)} miles`
+                }
+              }
+
+              return { ...account, distance, distanceValue }
+            })
+
+            updated.sort((a, b) => (a.distanceValue ?? Infinity) - (b.distanceValue ?? Infinity))
+            return updated
+          })
+        },
+        (error) => {
+          console.warn('Accounts watcher location error:', error)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 0,
+          maximumAge: 300000, // up to 5 minutes cached
+          distanceFilter: 250, // refresh about every 250 meters
+        },
+      )
+    } catch (e) {
+      console.warn('Failed to start Accounts location watcher:', e)
+    }
+
+    return () => {
+      if (watchId !== null) {
+        Geolocation.clearWatch(watchId)
+      }
+    }
+  }, [])
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true)
+      await fetchUserAccounts()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <Screen
       preset="auto"
       contentContainerStyle={themed($screenContentContainer)}
       safeAreaEdges={["top"]}
+      ScrollViewProps={{
+        refreshControl: (
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        ),
+      }}
     >
       <Text
         testID="accounts-heading"

@@ -32,6 +32,8 @@ import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
 import * as storage from "./utils/storage"
+import { locationService } from "./services/LocationService"
+import { supabase } from "./services/SupabaseService"
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
 
@@ -75,6 +77,22 @@ export function App() {
     initI18n()
       .then(() => setIsI18nInitialized(true))
       .then(() => loadDateFnsLocale())
+  }, [])
+
+  // On app launch, set user id if session exists and auto-start tracking if previously enabled
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const userId = session?.user?.id
+        if (userId) {
+          locationService.setUserId(userId)
+        }
+        await locationService.autoStartIfEnabled()
+      } catch (e) {
+        // non-fatal
+      }
+    })()
   }, [])
 
   // Before we show the app, we have to wait for our state to be ready.

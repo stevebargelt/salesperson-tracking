@@ -24,8 +24,9 @@ export class LocationService {
   private syncInterval: ReturnType<typeof setInterval> | null = null;
   private lastLocationTime = 0;
   private userId: string | null = null;
-  private useNativeModule = false; // Temporarily disabled - use React Native geolocation only
+  private useNativeModule = true; // Enable native iOS module for always-on tracking
   private nativeListenerCleanup: (() => void) | null = null;
+  private static TRACKING_PREF_KEY = 'tracking_enabled';
 
   private constructor() {
     // Private constructor for singleton
@@ -58,25 +59,45 @@ export class LocationService {
         const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE';
         const supabaseKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY_HERE';
         
-        const success = await nativeLocationManager.startBackgroundTracking(
-          this.userId,
-          supabaseUrl,
-          supabaseKey
-        );
+        // Fetch current access token to pass to native module for RLS-authenticated REST calls
+        // Try to obtain an access token (session may hydrate shortly after app start)
+        let accessToken: string | undefined = undefined;
+        for (let i = 0; i < 3; i++) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            accessToken = session.access_token;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
 
-        if (success) {
-          // Set up listeners for native events
-          this.setupNativeListeners();
-          
-          this.isTracking = true;
-          
-          // Start sync interval for any queued events from JS side
-          this.syncInterval = setInterval(this.syncQueuedEvents.bind(this), 30000);
-
-          console.log('📍 Native background location tracking started successfully');
-          return true;
+        if (!accessToken) {
+          console.warn('⚠️ No Supabase access token available; cannot start native background tracking. Falling back to JS geolocation.');
         } else {
-          console.warn('⚠️ Native tracking failed, falling back to React Native geolocation');
+          const success = await nativeLocationManager.startBackgroundTracking(
+            this.userId,
+            supabaseUrl,
+            supabaseKey,
+            accessToken
+          );
+
+          if (success) {
+            // Set up listeners for native events
+            this.setupNativeListeners();
+            
+            this.isTracking = true;
+            
+            // Start sync interval for any queued events from JS side
+            this.syncInterval = setInterval(this.syncQueuedEvents.bind(this), 30000);
+
+            // Persist preference
+            await AsyncStorage.setItem(LocationService.TRACKING_PREF_KEY, 'true');
+
+            console.log('📍 Native background location tracking started successfully');
+            return true;
+          } else {
+            console.warn('⚠️ Native tracking failed, falling back to React Native geolocation');
+          }
         }
       }
 
@@ -111,6 +132,9 @@ export class LocationService {
     
     // Start sync interval for queued events
     this.syncInterval = setInterval(this.syncQueuedEvents.bind(this), 30000); // Every 30 seconds
+
+    // Persist preference
+    await AsyncStorage.setItem(LocationService.TRACKING_PREF_KEY, 'true');
 
     console.log('📍 React Native location tracking started');
     return true;
@@ -174,6 +198,7 @@ export class LocationService {
     }
 
     this.isTracking = false;
+    await AsyncStorage.setItem(LocationService.TRACKING_PREF_KEY, 'false');
     console.log('📍 All location tracking stopped');
   }
 
@@ -198,6 +223,11 @@ export class LocationService {
       };
 
       console.log('📍 New location event:', locationData);
+
+      // Persist last event time for status display
+      try {
+        await AsyncStorage.setItem('last_location_event_time', locationData.timestamp);
+      } catch {}
 
       // Try to send immediately, queue if failed
       try {
@@ -334,23 +364,27 @@ export class LocationService {
   }
 
   // Get queue status
-  async getQueueStatus(): Promise<{ queuedCount: number; oldestEvent: Date | null }> {
+  async getQueueStatus(): Promise<{ queuedCount: number; oldestEvent: Date | null; lastEvent: Date | null }> {
     try {
       const existingQueue = await AsyncStorage.getItem('location_queue');
       if (!existingQueue) {
-        return { queuedCount: 0, oldestEvent: null };
+        // Also read last event time
+        const last = await AsyncStorage.getItem('last_location_event_time');
+        return { queuedCount: 0, oldestEvent: null, lastEvent: last ? new Date(last) : null };
       }
 
       const queue: QueuedLocationEvent[] = JSON.parse(existingQueue);
       const oldestEvent = queue.length > 0 ? new Date(Math.min(...queue.map(e => e.timestamp))) : null;
+      const last = await AsyncStorage.getItem('last_location_event_time');
       
       return {
         queuedCount: queue.length,
         oldestEvent,
+        lastEvent: last ? new Date(last) : null,
       };
     } catch (error) {
       console.error('📍 Error getting queue status:', error);
-      return { queuedCount: 0, oldestEvent: null };
+      return { queuedCount: 0, oldestEvent: null, lastEvent: null };
     }
   }
 
@@ -410,6 +444,35 @@ export class LocationService {
         reason: 'iOS native module not available'
       }
     };
+  }
+
+  // Preference helpers
+  async isTrackingEnabledPreference(): Promise<boolean> {
+    try {
+      const v = await AsyncStorage.getItem(LocationService.TRACKING_PREF_KEY);
+      return v === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  // Attempt to auto-start tracking if user previously enabled it.
+  async autoStartIfEnabled(): Promise<void> {
+    try {
+      const enabled = await this.isTrackingEnabledPreference();
+      if (!enabled) return;
+      // Ensure we have a user id
+      if (!this.userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          this.userId = session.user.id;
+        }
+      }
+      if (!this.userId) return; // wait until user is known
+      await this.startTracking();
+    } catch (e) {
+      console.warn('📍 Auto-start tracking skipped:', e);
+    }
   }
 }
 

@@ -1,5 +1,6 @@
-import { FC, useState, useEffect } from "react"
-import { ViewStyle, TextStyle, Alert, View } from "react-native"
+import { FC, useState, useEffect, useRef, useCallback } from "react"
+import { ViewStyle, TextStyle, Alert, View, AppState, AppStateStatus } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -8,6 +9,7 @@ import { Button } from "@/components/Button"
 import { Switch } from "@/components/Toggle/Switch"
 import { locationService } from "@/services/LocationService"
 import { supabaseHelpers } from "@/services/SupabaseService"
+import { nativeLocationManager } from "@/services/NativeLocationManager"
 import { useAuth } from "@/context/AuthContext"
 import type { MainTabScreenProps } from "@/navigators/MainTabNavigator"
 import type { ThemedStyle } from "@/theme/types"
@@ -52,11 +54,48 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
     return () => clearInterval(interval)
   }, [authEmail])
 
+  // Refresh when screen gains focus and subscribe to native events
+  useFocusEffect(
+    useCallback(() => {
+      let focusInterval: ReturnType<typeof setInterval> | null = null
+
+      // Kick an immediate refresh when focused
+      updateQueueStatus()
+
+      // Poll while focused
+      focusInterval = setInterval(updateQueueStatus, 15000)
+
+      // Subscribe to native events for more immediate updates
+      const offLoc = nativeLocationManager.onLocationUpdate(() => {
+        updateQueueStatus()
+      })
+      const offAuth = nativeLocationManager.onAuthorizationChanged((event) => {
+        setNativeStatus(`Native: ${nativeLocationManager.getAuthorizationStatusText(event.status)}`)
+      })
+
+      return () => {
+        if (focusInterval) clearInterval(focusInterval)
+        offLoc?.()
+        offAuth?.()
+      }
+    }, [])
+  )
+
+  // Refresh when app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') updateQueueStatus()
+    })
+    return () => sub.remove()
+  }, [])
+
   const updateQueueStatus = async () => {
     try {
       const status = await locationService.getQueueStatus()
       setQueuedEvents(status.queuedCount)
-      if (status.oldestEvent) {
+      if (status.lastEvent) {
+        setLastUpdate(status.lastEvent.toLocaleTimeString())
+      } else if (status.oldestEvent) {
         setLastUpdate(status.oldestEvent.toLocaleTimeString())
       }
       

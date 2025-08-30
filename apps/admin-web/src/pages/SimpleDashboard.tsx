@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@salesperson-tracking/supabase';
+import { adminFunctions } from '@salesperson-tracking/supabase';
 import { useAuthStore } from '../store/authStore';
 
 interface Stats {
@@ -17,8 +18,23 @@ export const SimpleDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { profile, signOut } = useAuthStore();
 
+  // Processing health state
+  const [procLoading, setProcLoading] = useState(false);
+  const [procError, setProcError] = useState<string | null>(null);
+  const [procHealth, setProcHealth] = useState<{
+    unprocessedEvents?: number;
+    recentVisitsCount?: number;
+    jobStatus?: any;
+    lastChecked?: string;
+  }>({});
+
   useEffect(() => {
     loadStats();
+    loadProcessingHealth();
+
+    // Refresh processing health every 60s
+    const iv = setInterval(loadProcessingHealth, 60000);
+    return () => clearInterval(iv);
   }, []);
 
   const loadStats = async () => {
@@ -33,6 +49,39 @@ export const SimpleDashboard: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load stats');
       setLoading(false);
+    }
+  };
+
+  const loadProcessingHealth = async () => {
+    try {
+      setProcError(null);
+      setProcLoading(true);
+      const result = await adminFunctions.getProcessingHealthMetrics();
+      if (result.error) {
+        setProcError(typeof result.error === 'string' ? result.error : 'Failed to load processing status');
+      }
+      setProcHealth({
+        unprocessedEvents: result.unprocessedEvents,
+        recentVisitsCount: result.recentVisitsCount,
+        jobStatus: result.jobStatus,
+        lastChecked: result.lastChecked,
+      });
+    } catch (e) {
+      setProcError(e instanceof Error ? e.message : 'Failed to load processing status');
+    } finally {
+      setProcLoading(false);
+    }
+  };
+
+  const triggerProcessing = async () => {
+    try {
+      setProcLoading(true);
+      await adminFunctions.triggerLocationProcessing();
+      await loadProcessingHealth();
+    } catch (e) {
+      setProcError(e instanceof Error ? e.message : 'Failed to trigger processing');
+    } finally {
+      setProcLoading(false);
     }
   };
 
@@ -184,31 +233,99 @@ export const SimpleDashboard: React.FC = () => {
                   🔄 Refresh Data
                 </ActionButton>
               </div>
-            </div>
+          </div>
 
-            {/* System status */}
-            <div style={{
-              backgroundColor: 'white',
-              padding: '1.5rem',
-              borderRadius: '0.5rem',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              marginTop: '1.5rem'
-            }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
-                System Status
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <StatusItem label="Database" value="Connected" color="green" />
-                <StatusItem label="PostGIS" value="Active" color="green" />
-                <StatusItem label="Authentication" value="Working" color="green" />
-                <StatusItem label="Total Accounts" value={`${stats?.total_accounts || 0}`} color="blue" />
-              </div>
+          {/* System status */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            marginTop: '1.5rem'
+          }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
+              System Status
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <StatusItem label="Database" value="Connected" color="green" />
+              <StatusItem label="PostGIS" value="Active" color="green" />
+              <StatusItem label="Authentication" value="Working" color="green" />
+              <StatusItem label="Total Accounts" value={`${stats?.total_accounts || 0}`} color="blue" />
             </div>
           </div>
-        )}
-      </main>
-    </div>
-  );
+
+          {/* Processing Health */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            marginTop: '1.5rem'
+          }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
+              Processing Health
+            </h3>
+
+            {procError && (
+              <div style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#991b1b',
+                padding: '0.75rem',
+                borderRadius: '0.375rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {procError}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <StatCard title="Unprocessed Events" value={procHealth.unprocessedEvents ?? '—'} color="#ef4444" />
+              <StatCard title="Visits Last Hour" value={procHealth.recentVisitsCount ?? '—'} color="#8b5cf6" />
+              <StatCard title="Job Active" value={procHealth.jobStatus?.active ? 'Yes' : 'No'} color="#10b981" />
+              <StatCard title="Last Run" value={procHealth.jobStatus?.last_run ? new Date(procHealth.jobStatus.last_run).toLocaleString() : '—'} color="#3b82f6" />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={loadProcessingHealth}
+                disabled={procLoading}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: procLoading ? '#9ca3af' : '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  cursor: procLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Refresh Status
+              </button>
+
+              <button
+                onClick={triggerProcessing}
+                disabled={procLoading}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: procLoading ? '#9ca3af' : '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  cursor: procLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Trigger Processing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  </div>
+);
 };
 
 interface StatCardProps {

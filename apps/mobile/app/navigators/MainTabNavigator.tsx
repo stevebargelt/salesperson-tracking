@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icon"
 import { DashboardScreen } from "@/screens/DashboardScreen"
 import { TrackingScreen } from "@/screens/TrackingScreen"
 import { AccountsScreen } from "@/screens/AccountsScreen"
+import { VisitsScreen } from "@/screens/VisitsScreen"
 import { ProfileScreen } from "@/screens/ProfileScreen"
 import type { ThemedStyle } from "@/theme/types"
 import { useAppTheme } from "@/theme/context"
@@ -16,6 +17,7 @@ import { AppStackParamList, AppStackScreenProps } from "./AppNavigator"
 export type MainTabParamList = {
   Dashboard: undefined
   Tracking: undefined
+  Visits: undefined
   Accounts: undefined
   Profile: undefined
 }
@@ -81,6 +83,21 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <Icon
               icon="pin" // Location pin icon
+              color={focused ? colors.tint : colors.tintInactive}
+              size={30}
+            />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Visits"
+        component={VisitsScreen}
+        options={{
+          tabBarLabel: "Visits",
+          tabBarIcon: ({ focused }) => (
+            <Icon
+              icon="list"
               color={focused ? colors.tint : colors.tintInactive}
               size={30}
             />

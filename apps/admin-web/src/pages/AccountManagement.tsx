@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@salesperson-tracking/supabase';
+import { supabase, supabaseHelpers } from '@salesperson-tracking/supabase';
 import type { Account, Profile } from '@salesperson-tracking/types';
 import { formatDistance } from '@salesperson-tracking/utils';
 
@@ -15,6 +15,7 @@ export const AccountManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -27,6 +28,19 @@ export const AccountManagement: React.FC = () => {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    id: '',
+    account_name: '',
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    geofence_radius: 100,
+  });
+  const [editFormLoading, setEditFormLoading] = useState(false);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -91,10 +105,47 @@ export const AccountManagement: React.FC = () => {
     setFormError(null);
 
     try {
-      // Simple geocoding - in production you'd use a real geocoding service
-      const address = `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip_code}`;
-      
-      // For now, use approximate coordinates (you could integrate with a geocoding API)
+      // Geocode the address
+      const fullAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip_code}`;
+
+      // Try Supabase RPC first (if present), then fallback to client-side Nominatim
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+
+      try {
+        const { data: geo } = await supabaseHelpers.geocodeAddress(fullAddress);
+        if (geo && typeof (geo as any).latitude === 'number' && typeof (geo as any).longitude === 'number') {
+          latitude = (geo as any).latitude;
+          longitude = (geo as any).longitude;
+        }
+      } catch (rpcErr) {
+        // Ignore; we'll try client-side fallback
+      }
+
+      if (latitude == null || longitude == null) {
+        // Fallback: OpenStreetMap Nominatim (client-side). For production, consider a paid provider.
+        const q = encodeURIComponent(fullAddress);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
+        const res = await fetch(url, {
+          headers: {
+            // Cannot set User-Agent from browser; optionally include your email in params if needed.
+            'Accept': 'application/json'
+          }
+        });
+        if (!res.ok) {
+          throw new Error('Failed to geocode address. Please verify the address and try again.');
+        }
+        const arr = await res.json();
+        if (Array.isArray(arr) && arr.length > 0) {
+          latitude = parseFloat(arr[0].lat);
+          longitude = parseFloat(arr[0].lon);
+        }
+      }
+
+      if (latitude == null || longitude == null || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        throw new Error('Failed to geocode address. Please verify the address and try again.');
+      }
+
       const { data, error } = await supabase
         .from('accounts')
         .insert({
@@ -103,8 +154,8 @@ export const AccountManagement: React.FC = () => {
           city: formData.city,
           state: formData.state,
           zip_code: formData.zip_code,
-          latitude: 47.6062, // Seattle default - you'd replace with real geocoding
-          longitude: -122.3321,
+          latitude,
+          longitude,
           geofence_radius: formData.geofence_radius
         })
         .select()
@@ -158,6 +209,82 @@ export const AccountManagement: React.FC = () => {
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove assignment');
+    }
+  };
+
+  const beginEditAccount = (account: AccountWithAssignments) => {
+    setEditFormError(null);
+    setEditFormData({
+      id: account.id,
+      account_name: account.account_name,
+      address: account.address,
+      city: account.city,
+      state: account.state,
+      zip_code: account.zip_code,
+      geofence_radius: account.geofence_radius,
+    });
+    setShowEditForm(true);
+    setShowCreateForm(false);
+  };
+
+  const updateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFormLoading(true);
+    setEditFormError(null);
+
+    try {
+      const fullAddress = `${editFormData.address}, ${editFormData.city}, ${editFormData.state} ${editFormData.zip_code}`;
+
+      // Try RPC geocoding first
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      try {
+        const { data: geo } = await supabaseHelpers.geocodeAddress(fullAddress);
+        if (geo && typeof (geo as any).latitude === 'number' && typeof (geo as any).longitude === 'number') {
+          latitude = (geo as any).latitude;
+          longitude = (geo as any).longitude;
+        }
+      } catch {}
+
+      // Fallback to Nominatim if needed
+      if (latitude == null || longitude == null) {
+        const q = encodeURIComponent(fullAddress);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+          const arr = await res.json();
+          if (Array.isArray(arr) && arr.length > 0) {
+            latitude = parseFloat(arr[0].lat);
+            longitude = parseFloat(arr[0].lon);
+          }
+        }
+      }
+
+      if (latitude == null || longitude == null || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        throw new Error('Failed to geocode address. Please verify the address and try again.');
+      }
+
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({
+          account_name: editFormData.account_name,
+          address: editFormData.address,
+          city: editFormData.city,
+          state: editFormData.state,
+          zip_code: editFormData.zip_code,
+          latitude,
+          longitude,
+        })
+        .eq('id', editFormData.id);
+
+      if (updateError) throw updateError;
+
+      setShowEditForm(false);
+      await loadData();
+    } catch (err) {
+      setEditFormError(err instanceof Error ? err.message : 'Failed to update account');
+    } finally {
+      setEditFormLoading(false);
     }
   };
 
@@ -377,6 +504,176 @@ export const AccountManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Edit account form */}
+      {showEditForm && (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>
+            Edit Account
+          </h2>
+
+          {editFormError && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#991b1b',
+              padding: '0.75rem',
+              borderRadius: '0.375rem',
+              marginBottom: '1rem',
+              fontSize: '0.875rem'
+            }}>
+              {editFormError}
+            </div>
+          )}
+
+          <form onSubmit={updateAccount}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                  Account Name *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.account_name}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, account_name: e.target.value }))}
+                  placeholder="Customer Company Name"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                  Address *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="123 Main St"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                  City *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="Seattle"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                  State *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.state}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, state: e.target.value }))}
+                  placeholder="WA"
+                  required
+                  maxLength={2}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                  ZIP Code *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.zip_code}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, zip_code: e.target.value }))}
+                  placeholder="98101"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="submit"
+                disabled={editFormLoading}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: editFormLoading ? '#9ca3af' : '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  cursor: editFormLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {editFormLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowEditForm(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Error display */}
       {error && (
         <div style={{
@@ -499,30 +796,47 @@ export const AccountManagement: React.FC = () => {
                       )}
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            assignAccountToUser(account.id, e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                        style={{
-                          padding: '0.25rem 0.5rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '0.25rem',
-                          fontSize: '0.75rem',
-                          backgroundColor: 'white'
-                        }}
-                      >
-                        <option value="">Assign to...</option>
-                        {users.filter(user => 
-                          !account.assigned_users?.some(au => au.id === user.id)
-                        ).map(user => (
-                          <option key={user.id} value={user.id}>
-                            {user.full_name}
-                          </option>
-                        ))}
-                      </select>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => beginEditAccount(account)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edit
+                        </button>
+
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              assignAccountToUser(account.id, e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem',
+                            backgroundColor: 'white'
+                          }}
+                        >
+                          <option value="">Assign to...</option>
+                          {users.filter(user => 
+                            !account.assigned_users?.some(au => au.id === user.id)
+                          ).map(user => (
+                            <option key={user.id} value={user.id}>
+                              {user.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}

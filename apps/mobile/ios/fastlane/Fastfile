@@ -19,7 +19,7 @@ before_all do |lane|
       key_id: JSON.parse(File.read("./app_store_connect_api_key.json"))["key_id"],
       issuer_id: JSON.parse(File.read("./app_store_connect_api_key.json"))["issuer_id"],
       # key_content: JSON.parse(File.read("./app_store_connect_api_key.json"))["key"],
-      key_filepath: "/Users/stevebargelt/code/salesperson-tracking/apps/mobile/ios/fastlane/AuthKey_5R9GAYB9CU.p8"
+      key_filepath: "/Users/stevebargelt/code/salesperson-tracking/apps/mobile/ios/fastlane/AuthKey_F59354844S.p8"
     )
 end
 
