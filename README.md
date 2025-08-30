@@ -83,6 +83,13 @@ npx nx lint mobile
 npx nx run-ios mobile    # Same as 'npx nx ios mobile'
 ```
 
+### **5. Mobile CI/CD (Branches + Workflows)**
+- Branches: `develop` → TestFlight, `main` → App Store Connect
+- PR checks: `.github/workflows/mobile-pr-checks.yml` runs lint/type-check/tests on PRs
+- Beta deploys: `.github/workflows/mobile-beta.yml` builds and uploads to TestFlight on merges to `develop`
+- Release deploys: `.github/workflows/mobile-release.yml` builds and uploads to App Store Connect on merges to `main`
+- Required secrets: `APP_STORE_CONNECT_API_KEY`, `MATCH_PASSWORD` (optional: `MATCH_SSH_PRIVATE_KEY`, `SLACK_WEBHOOK_URL`)
+
 ### **4. Fastlane Build & Distribution**
 ```bash
 # Certificate management
