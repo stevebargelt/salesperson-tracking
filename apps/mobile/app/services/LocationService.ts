@@ -62,23 +62,26 @@ export class LocationService {
         // Fetch current access token to pass to native module for RLS-authenticated REST calls
         // Try to obtain an access token (session may hydrate shortly after app start)
         let accessToken: string | undefined = undefined;
+        let refreshToken: string | undefined = undefined;
         for (let i = 0; i < 3; i++) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
             accessToken = session.access_token;
+            refreshToken = session.refresh_token as string | undefined;
             break;
           }
           await new Promise((r) => setTimeout(r, 500));
         }
-
-        if (!accessToken) {
+        // Also get refresh token (already captured if session present)
+        if (!accessToken || !refreshToken) {
           console.warn('⚠️ No Supabase access token available; cannot start native background tracking. Falling back to JS geolocation.');
         } else {
           const success = await nativeLocationManager.startBackgroundTracking(
             this.userId,
             supabaseUrl,
             supabaseKey,
-            accessToken
+            accessToken,
+            refreshToken
           );
 
           if (success) {
@@ -415,6 +418,7 @@ export class LocationService {
     if (nativeLocationManager.isAvailable()) {
       try {
         const nativeStatus = await nativeLocationManager.getStatus();
+        const queueInfo = await nativeLocationManager.getQueueInfo();
         return {
           ...basicStatus,
           native: {
@@ -424,6 +428,9 @@ export class LocationService {
             authorizationText: nativeLocationManager.getAuthorizationStatusText(nativeStatus.authorizationStatus),
             backgroundRefreshStatus: nativeStatus.backgroundRefreshStatus,
             significantLocationAvailable: nativeStatus.significantLocationAvailable,
+            queueCount: queueInfo.queueCount,
+            lastQueuedAt: queueInfo.lastQueuedAt,
+            lastFlushAt: queueInfo.lastFlushAt,
           }
         };
       } catch (error) {

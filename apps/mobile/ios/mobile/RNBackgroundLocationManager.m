@@ -8,6 +8,15 @@ RCT_EXTERN_METHOD(startBackgroundTracking:(NSString *)userId
                   supabaseUrl:(NSString *)supabaseUrl
                   supabaseKey:(NSString *)supabaseKey
                   accessToken:(NSString *)accessToken
+                  refreshToken:(NSString *)refreshToken
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+// Legacy 4-arg variant to preserve compatibility
+RCT_EXTERN_METHOD(startBackgroundTrackingLegacy:(NSString *)userId
+                  supabaseUrl:(NSString *)supabaseUrl
+                  supabaseKey:(NSString *)supabaseKey
+                  accessToken:(NSString *)accessToken
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
@@ -17,6 +26,10 @@ RCT_EXTERN_METHOD(stopBackgroundTracking:(RCTPromiseResolveBlock)resolve
 
 // Get current tracking status and permissions
 RCT_EXTERN_METHOD(getTrackingStatus:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+// Get native queue status (count, lastQueuedAt, lastFlushAt)
+RCT_EXTERN_METHOD(getQueueInfo:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
 @end

@@ -96,11 +96,11 @@ export function MainTabNavigator() {
         options={{
           tabBarLabel: "Visits",
           tabBarIcon: ({ focused }) => (
-            <Icon
-              icon="list"
-              color={focused ? colors.tint : colors.tintInactive}
-              size={30}
-            />
+          <Icon
+            icon="check"
+            color={focused ? colors.tint : colors.tintInactive}
+            size={30}
+          />
           ),
         }}
       />

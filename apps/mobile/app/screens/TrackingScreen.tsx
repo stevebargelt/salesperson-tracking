@@ -22,6 +22,7 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
   const [queuedEvents, setQueuedEvents] = useState(0)
   const [lastUpdate, setLastUpdate] = useState<string>("Never")
   const [nativeStatus, setNativeStatus] = useState<string>("Checking...")
+  const [nativeQueue, setNativeQueue] = useState<string>("")
   
   const { authEmail } = useAuth()
 
@@ -107,8 +108,15 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
         } else if (detailedStatus.native.error) {
           setNativeStatus(`Native: ${detailedStatus.native.error}`)
         }
+        if (typeof detailedStatus.native.queueCount === 'number') {
+          const q = detailedStatus.native.queueCount
+          const lastQ = detailedStatus.native.lastQueuedAt ? new Date(detailedStatus.native.lastQueuedAt).toLocaleTimeString() : '—'
+          const lastF = detailedStatus.native.lastFlushAt ? new Date(detailedStatus.native.lastFlushAt).toLocaleTimeString() : '—'
+          setNativeQueue(`Native Queue: ${q} • Last Queued: ${lastQ} • Last Flush: ${lastF}`)
+        }
       } else {
         setNativeStatus(detailedStatus.native.reason || "Native: Not available")
+        setNativeQueue("")
       }
     } catch (error) {
       console.error('Failed to get queue status:', error)
@@ -213,6 +221,9 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
             <Text text={`Queued Events: ${queuedEvents}`} style={themed($infoText)} />
             <Text text={`Last Update: ${lastUpdate}`} style={themed($infoText)} />
             <Text text={nativeStatus} style={themed($infoText)} />
+            {nativeQueue ? (
+              <Text text={nativeQueue} style={themed($infoText)} />
+            ) : null}
             <Text text="Battery Optimization: SLC Mode" style={themed($infoText)} />
           </View>
         }

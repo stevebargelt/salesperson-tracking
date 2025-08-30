@@ -1,13 +1,19 @@
 import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 
 interface BackgroundLocationManager {
-  startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string): Promise<{status: string, message: string}>;
+  startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string, refreshToken: string): Promise<{status: string, message: string}>;
+  startBackgroundTrackingLegacy(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string): Promise<{status: string, message: string}>;
   stopBackgroundTracking(): Promise<{status: string, message: string}>;
   getTrackingStatus(): Promise<{
     isTracking: boolean;
     authorizationStatus: string;
     backgroundRefreshStatus: number;
     significantLocationAvailable: boolean;
+  }>;
+  getQueueInfo(): Promise<{
+    queueCount: number;
+    lastQueuedAt?: string | null;
+    lastFlushAt?: string | null;
   }>;
 }
 
@@ -35,7 +41,7 @@ class NativeLocationManager {
   }
 
   // Start background location tracking with native iOS capabilities
-  async startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string): Promise<boolean> {
+  async startBackgroundTracking(userId: string, supabaseUrl: string, supabaseKey: string, accessToken: string, refreshToken: string): Promise<boolean> {
     if (!this.isAvailable()) {
       console.warn('Native background location manager not available');
       return false;
@@ -46,13 +52,26 @@ class NativeLocationManager {
         userId, 
         supabaseUrl, 
         supabaseKey,
-        accessToken
+        accessToken,
+        refreshToken
       );
       console.log('📍 Native background tracking started:', result);
       return result.status === 'started';
     } catch (error) {
-      console.error('❌ Failed to start native background tracking:', error);
-      return false;
+      console.warn('❌ Failed 5-arg native start, retrying legacy 4-arg:', error);
+      try {
+        const legacy = await RNBackgroundLocationManager.startBackgroundTrackingLegacy(
+          userId,
+          supabaseUrl,
+          supabaseKey,
+          accessToken,
+        );
+        console.log('📍 Native background (legacy) tracking started:', legacy);
+        return legacy.status === 'started';
+      } catch (err2) {
+        console.error('❌ Failed legacy native background tracking:', err2);
+        return false;
+      }
     }
   }
 
@@ -157,6 +176,18 @@ class NativeLocationManager {
       case 'restricted': return 'Restricted (Parental controls)';
       case 'notDetermined': return 'Not Asked Yet';
       default: return `Unknown (${status})`;
+    }
+  }
+
+  // Get native queue info
+  async getQueueInfo() {
+    if (!this.isAvailable()) {
+      return { queueCount: 0, lastQueuedAt: null, lastFlushAt: null }
+    }
+    try {
+      return await RNBackgroundLocationManager.getQueueInfo()
+    } catch (e) {
+      return { queueCount: 0, lastQueuedAt: null, lastFlushAt: null }
     }
   }
 }

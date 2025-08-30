@@ -155,6 +155,27 @@ platform :ios do
       merge_commit_filtering: "exclude_merges"
     )
     
+    # Ensure Export Compliance metadata is set (encryption)
+    # This updates the current version's submission information without uploading metadata/screenshots
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
+      submit_for_review: false,
+      force: true,
+      submission_information: {
+        export_compliance_uses_encryption: true,
+        export_compliance_encryption_updated: false,
+        export_compliance_compliance_required: false,
+        export_compliance_available_on_french_store: true,
+        export_compliance_contains_proprietary_cryptography: false,
+        export_compliance_contains_third_party_cryptography: true,
+        export_compliance_is_exempt: true,
+        export_compliance_platform: 'ios'
+      }
+    )
+
     # Upload to TestFlight
     pilot(
       ipa: "./builds/production/SalespersonTracker-Production.ipa",
