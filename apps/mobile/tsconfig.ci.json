@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["jest", "react", "react-native"]
+    "types": ["jest", "react"],
+    "typeRoots": ["../../node_modules/@types", "./types"]
   },
   "exclude": [
     "**/*.test.ts",
@@ -10,4 +11,3 @@
     "app/devtools/**"
   ]
 }
-
