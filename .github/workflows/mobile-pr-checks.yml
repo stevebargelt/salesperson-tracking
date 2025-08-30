@@ -1,0 +1,53 @@
+name: Mobile PR Checks
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'apps/mobile/**'
+      - 'libs/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'nx.json'
+      - 'tsconfig.base.json'
+
+concurrency:
+  group: mobile-pr-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Type Check
+        run: npx nx type-check mobile
+
+      - name: Lint
+        run: npx nx lint mobile
+
+      - name: Unit Tests
+        run: npx nx test mobile --runInBand --passWithNoTests
+
