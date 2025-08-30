@@ -24,7 +24,7 @@ export class LocationService {
   private syncInterval: ReturnType<typeof setInterval> | null = null;
   private lastLocationTime = 0;
   private userId: string | null = null;
-  private useNativeModule = true; // Prefer native module for always-on tracking
+  private useNativeModule = false; // Temporarily disabled - use React Native geolocation only
   private nativeListenerCleanup: (() => void) | null = null;
 
   private constructor() {

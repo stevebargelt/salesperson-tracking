@@ -1,7 +1,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 
-@interface RCT_EXTERN_MODULE(RNBackgroundLocationManager, RCTEventEmitter)
+@interface RCT_EXTERN_MODULE(RNBackgroundLocationManager, NSObject)
 
 // Start background location tracking
 RCT_EXTERN_METHOD(startBackgroundTracking:(NSString *)userId

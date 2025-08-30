@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03738C6A2E615087009D1C5C /* RNBackgroundLocationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 03738C682E615087009D1C5C /* RNBackgroundLocationManager.m */; };
+		03738C6B2E615087009D1C5C /* RNBackgroundLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03738C692E615087009D1C5C /* RNBackgroundLocationManager.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		70C242180A6944A8B0B92DDA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 33848898A2CB47EEA04DFDE3 /* PrivacyInfo.xcprivacy */; };
@@ -17,6 +19,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		03738C682E615087009D1C5C /* RNBackgroundLocationManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = RNBackgroundLocationManager.m; path = mobile/RNBackgroundLocationManager.m; sourceTree = "<group>"; };
+		03738C692E615087009D1C5C /* RNBackgroundLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RNBackgroundLocationManager.swift; path = mobile/RNBackgroundLocationManager.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* mobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = mobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = mobile/Info.plist; sourceTree = "<group>"; };
@@ -47,6 +51,8 @@
 		13B07FAE1A68108700A75B9A /* mobile */ = {
 			isa = PBXGroup;
 			children = (
+				03738C682E615087009D1C5C /* RNBackgroundLocationManager.m */,
+				03738C692E615087009D1C5C /* RNBackgroundLocationManager.swift */,
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* mobile-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
@@ -332,6 +338,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
+				03738C6A2E615087009D1C5C /* RNBackgroundLocationManager.m in Sources */,
+				03738C6B2E615087009D1C5C /* RNBackgroundLocationManager.swift in Sources */,
 				F4C745054AE4070A2F6EE4E7 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
