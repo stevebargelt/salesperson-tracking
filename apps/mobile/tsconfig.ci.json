@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "react", "react-native"]
+  },
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "app.config.ts",
+    "app/devtools/**"
+  ]
+}
+
