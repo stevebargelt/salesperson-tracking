@@ -15,6 +15,7 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "app.config.ts",
+    "app/components/Screen.tsx",
     "app/app.tsx",
     "app/devtools/**"
   ]
