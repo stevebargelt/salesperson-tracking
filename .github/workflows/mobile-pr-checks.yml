@@ -35,6 +35,9 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      - name: Install mobile app deps
+        run: pnpm --filter mobile install --frozen-lockfile
+
       - name: Type Check (mobile)
         run: npx nx type-check mobile
 
