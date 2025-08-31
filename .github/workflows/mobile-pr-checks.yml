@@ -3,6 +3,14 @@ name: Mobile PR Checks
 on:
   pull_request:
     branches: [develop, main]
+    paths:
+      - 'apps/mobile/**'
+      - 'libs/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'nx.json'
+      - 'tsconfig.base.json'
+      - '.github/workflows/mobile-pr-checks.yml'
 
 concurrency:
   group: mobile-pr-${{ github.head_ref || github.run_id }}
