@@ -36,7 +36,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Type Check (mobile)
-        run: npx tsc --noEmit -p apps/mobile/tsconfig.ci.json
+        run: npx nx type-check mobile
 
       - name: Lint
         run: npx nx lint mobile
