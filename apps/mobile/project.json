@@ -50,7 +50,14 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/mobile/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "apps/mobile/app/**/*.ts",
+          "apps/mobile/app/**/*.tsx",
+          "apps/mobile/app/**/*.js",
+          "apps/mobile/app/**/*.jsx",
+          "!apps/mobile/app/**/*.test.{ts,tsx,js,jsx}",
+          "!apps/mobile/app/devtools/**"
+        ]
       }
     },
     "type-check": {

@@ -20,3 +20,8 @@
 
 - Replace client-side Nominatim fallback with a server-side RPC using `pg_net/http` and a paid geocoding provider.
 
+## CI/CD: PR dev IPA artifact (future)
+
+- Add a lightweight job to the PR checks workflow to build a development or ad-hoc .ipa and upload as an artifact for reviewers/QA.
+- Reuse Fastlane lanes (e.g., `build_development`) and `actions/upload-artifact`.
+- Run only on pull_request to reduce macOS minutes and avoid TestFlight uploads.
