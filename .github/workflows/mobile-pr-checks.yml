@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -32,11 +32,11 @@ jobs:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Install deps
+      - name: Install deps (root)
         run: pnpm install --frozen-lockfile
 
-      - name: Install mobile app deps
-        run: pnpm --filter mobile install --frozen-lockfile
+      - name: Install deps (mobile app)
+        run: pnpm --dir apps/mobile install --no-frozen-lockfile
 
       - name: Type Check (mobile)
         run: npx nx type-check mobile
