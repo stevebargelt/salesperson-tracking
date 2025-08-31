@@ -14,7 +14,6 @@
     ],
     "sharedGlobals": []
   },
-  "nxCloudId": "68ae2deb1d4c1d75d9c58538",
   "plugins": [
     {
       "plugin": "@nx/react-native/plugin",
