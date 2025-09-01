@@ -39,5 +39,4 @@ RCT_EXTERN_METHOD(flushQueueNow:(RCTPromiseResolveBlock)resolve
 // Clear the native queue (debugging)
 RCT_EXTERN_METHOD(clearQueueNow:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
-
 @end
