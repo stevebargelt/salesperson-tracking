@@ -203,9 +203,12 @@ class NativeLocationManager {
     }
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 >>>>>>> d80d974
+=======
+>>>>>>> b78995b (feat(mobile): add Developer/Debug screen with native queue tools and status; add Debug tab)
 
   async clearQueue() {
     if (!this.isAvailable()) return { cleared: 0 }
@@ -216,10 +219,13 @@ class NativeLocationManager {
     }
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> a6ef075 (feat(mobile): expose native queue flush and add UI control on Tracking screen)
 >>>>>>> d80d974
+=======
+>>>>>>> b78995b (feat(mobile): add Developer/Debug screen with native queue tools and status; add Debug tab)
 }
 
 // Export singleton instance
