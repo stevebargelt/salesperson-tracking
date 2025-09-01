@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -35,8 +35,11 @@ jobs:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Install JS deps
+      - name: Install JS deps (root)
         run: pnpm install --frozen-lockfile
+
+      - name: Install JS deps (mobile app)
+        run: pnpm --dir apps/mobile install --no-frozen-lockfile
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -63,4 +66,3 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: npx nx deploy-beta mobile
-
