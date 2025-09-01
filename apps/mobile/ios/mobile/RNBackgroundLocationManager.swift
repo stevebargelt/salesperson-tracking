@@ -247,7 +247,7 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
     }
 
     private func flushQueue() {
-        var queue = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]]) ?? []
+        let queue = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]]) ?? []
         if queue.isEmpty { return }
         // Attempt batch post
         guard let supabaseUrl = self.supabaseUrl, let supabaseKey = self.supabaseKey else { return }
@@ -288,7 +288,11 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
         let before = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
         self.flushQueue()
         let after = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
-        resolver(["queuedBefore": before, "queuedAfter": after, "lastFlushAt": self.lastFlushAt != nil ? ISO8601DateFormatter().string(from: self.lastFlushAt!) : NSNull()])
+        var lastAny: Any = NSNull()
+        if let lf = self.lastFlushAt {
+            lastAny = ISO8601DateFormatter().string(from: lf) as Any
+        }
+        resolver(["queuedBefore": before, "queuedAfter": after, "lastFlushAt": lastAny])
     }
 
     // MARK: - Queue Info
