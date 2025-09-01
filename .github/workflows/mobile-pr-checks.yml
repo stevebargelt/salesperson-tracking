@@ -11,6 +11,8 @@ on:
       - 'nx.json'
       - 'tsconfig.base.json'
       - '.github/workflows/mobile-pr-checks.yml'
+      - '.github/workflows/mobile-beta.yml'
+      - '.github/workflows/mobile-release.yml'
 
 concurrency:
   group: mobile-pr-${{ github.head_ref || github.run_id }}
