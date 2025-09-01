@@ -17,6 +17,7 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
     private let tokenStoreKey = "supabase_tokens" // TODO: Migrate to Keychain with kSecAttrAccessibleAfterFirstUnlock(ThisDeviceOnly)
     private var flushTimer: Timer?
     private var lastFlushAt: Date?
+    private var lastStatusCode: Int?
     private var lastSentAt: Date? = nil
 
     override init() {
@@ -212,6 +213,7 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
                 return
             }
             if let httpResp = response as? HTTPURLResponse {
+                self.lastStatusCode = httpResp.statusCode
                 if (200...299).contains(httpResp.statusCode) {
                     completion(true)
                 } else if httpResp.statusCode == 401 {
@@ -268,7 +270,9 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
                 UserDefaults.standard.removeObject(forKey: self.queueKey)
                 print("📍 Flushed \(queue.count) queued events")
                 self.lastFlushAt = Date()
+                self.lastStatusCode = httpResp.statusCode
             } else if let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 401 {
+                self.lastStatusCode = httpResp.statusCode
                 self.refreshAccessToken { refreshed in
                     if refreshed { self.flushQueue() }
                 }
@@ -276,6 +280,15 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
                 print("📍 Flush queue network error: \(error.localizedDescription)")
             }
         }.resume()
+    }
+
+    // Expose manual flush
+    @objc
+    func flushQueueNow(_ resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+        let before = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
+        self.flushQueue()
+        let after = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
+        resolver(["queuedBefore": before, "queuedAfter": after, "lastFlushAt": self.lastFlushAt != nil ? ISO8601DateFormatter().string(from: self.lastFlushAt!) : NSNull()])
     }
 
     // MARK: - Queue Info
@@ -289,8 +302,17 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
         resolver([
             "queueCount": count,
             "lastQueuedAt": lastQueuedAt as Any,
-            "lastFlushAt": lastFlushTs as Any
+            "lastFlushAt": lastFlushTs as Any,
+            "lastStatusCode": lastStatusCode as Any
         ])
+    }
+
+    // Clear queue contents (debugging)
+    @objc
+    func clearQueueNow(_ resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+        let count = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
+        UserDefaults.standard.removeObject(forKey: queueKey)
+        resolver(["cleared": count])
     }
 
     // MARK: - Token Refresh

@@ -8,6 +8,7 @@ import { DashboardScreen } from "@/screens/DashboardScreen"
 import { TrackingScreen } from "@/screens/TrackingScreen"
 import { AccountsScreen } from "@/screens/AccountsScreen"
 import { VisitsScreen } from "@/screens/VisitsScreen"
+import { DebugScreen } from "@/screens/DebugScreen"
 import { ProfileScreen } from "@/screens/ProfileScreen"
 import type { ThemedStyle } from "@/theme/types"
 import { useAppTheme } from "@/theme/context"
@@ -20,6 +21,7 @@ export type MainTabParamList = {
   Visits: undefined
   Accounts: undefined
   Profile: undefined
+  Debug: undefined
 }
 
 /**
@@ -113,6 +115,21 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <Icon
               icon="community"
+              color={focused ? colors.tint : colors.tintInactive}
+              size={30}
+            />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Debug"
+        component={DebugScreen}
+        options={{
+          tabBarLabel: "Debug",
+          tabBarIcon: ({ focused }) => (
+            <Icon
+              icon="debug"
               color={focused ? colors.tint : colors.tintInactive}
               size={30}
             />

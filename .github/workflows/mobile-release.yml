@@ -25,6 +25,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Select Xcode 16.4
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -49,8 +54,10 @@ jobs:
           bundler-cache: true
           working-directory: apps/mobile/ios
 
-      - name: Install iOS pods
-        run: npx nx pod-install mobile
+      - name: Install iOS pods (with repo update)
+        run: |
+          cd apps/mobile/ios
+          pod install --repo-update
 
       - name: Match SSH (optional)
         env:
@@ -67,3 +74,12 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: npx nx deploy-production mobile
+
+      - name: Upload Xcode/Gym Logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-gym-logs
+          path: |
+            ~/Library/Logs/gym/**/*
+            ~/Library/Logs/scan/**/*

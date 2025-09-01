@@ -431,6 +431,7 @@ export class LocationService {
             queueCount: queueInfo.queueCount,
             lastQueuedAt: queueInfo.lastQueuedAt,
             lastFlushAt: queueInfo.lastFlushAt,
+            lastStatusCode: queueInfo.lastStatusCode,
           }
         };
       } catch (error) {
@@ -479,6 +480,22 @@ export class LocationService {
       await this.startTracking();
     } catch (e) {
       console.warn('📍 Auto-start tracking skipped:', e);
+    }
+  }
+
+  async flushNativeQueue() {
+    try {
+      return await nativeLocationManager.flushQueue()
+    } catch (e) {
+      return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
+    }
+  }
+
+  async clearNativeQueue() {
+    try {
+      return await nativeLocationManager.clearQueue()
+    } catch (e) {
+      return { cleared: 0 }
     }
   }
 }
