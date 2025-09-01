@@ -49,7 +49,6 @@ jobs:
         run: npx nx pod-install mobile
 
       - name: Match SSH (optional)
-        if: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
         env:
           MATCH_SSH_PRIVATE_KEY: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
         run: |
