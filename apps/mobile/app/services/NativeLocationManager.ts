@@ -202,6 +202,10 @@ class NativeLocationManager {
       return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
     }
   }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> d80d974
 
   async clearQueue() {
     if (!this.isAvailable()) return { cleared: 0 }
@@ -211,6 +215,11 @@ class NativeLocationManager {
       return { cleared: 0 }
     }
   }
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> a6ef075 (feat(mobile): expose native queue flush and add UI control on Tracking screen)
+>>>>>>> d80d974
 }
 
 // Export singleton instance
