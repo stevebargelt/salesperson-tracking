@@ -32,4 +32,8 @@ RCT_EXTERN_METHOD(getTrackingStatus:(RCTPromiseResolveBlock)resolve
 RCT_EXTERN_METHOD(getQueueInfo:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+// Manually trigger a queue flush
+RCT_EXTERN_METHOD(flushQueueNow:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end

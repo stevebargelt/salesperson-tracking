@@ -23,6 +23,7 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
   const [lastUpdate, setLastUpdate] = useState<string>("Never")
   const [nativeStatus, setNativeStatus] = useState<string>("Checking...")
   const [nativeQueue, setNativeQueue] = useState<string>("")
+  const [nativeQueueCount, setNativeQueueCount] = useState<number>(0)
   
   const { authEmail } = useAuth()
 
@@ -110,6 +111,7 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
         }
         if (typeof detailedStatus.native.queueCount === 'number') {
           const q = detailedStatus.native.queueCount
+          setNativeQueueCount(q)
           const lastQ = detailedStatus.native.lastQueuedAt ? new Date(detailedStatus.native.lastQueuedAt).toLocaleTimeString() : '—'
           const lastF = detailedStatus.native.lastFlushAt ? new Date(detailedStatus.native.lastFlushAt).toLocaleTimeString() : '—'
           setNativeQueue(`Native Queue: ${q} • Last Queued: ${lastQ} • Last Flush: ${lastF}`)
@@ -242,6 +244,18 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
         preset="default"
         onPress={forceSync}
         disabled={queuedEvents === 0}
+      />
+
+      <Button
+        text="Flush Native Queue"
+        style={themed($button)}
+        preset="default"
+        onPress={async () => {
+          const res = await locationService.flushNativeQueue()
+          await updateQueueStatus()
+          Alert.alert('Native Flush', `Queued before: ${res.queuedBefore}\nQueued after: ${res.queuedAfter}`)
+        }}
+        disabled={nativeQueueCount === 0}
       />
 
       {/* Help Text */}

@@ -278,6 +278,15 @@ class RNBackgroundLocationManager: RCTEventEmitter, CLLocationManagerDelegate {
         }.resume()
     }
 
+    // Expose manual flush
+    @objc
+    func flushQueueNow(_ resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+        let before = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
+        self.flushQueue()
+        let after = (UserDefaults.standard.array(forKey: queueKey) as? [[String: Any]])?.count ?? 0
+        resolver(["queuedBefore": before, "queuedAfter": after, "lastFlushAt": self.lastFlushAt != nil ? ISO8601DateFormatter().string(from: self.lastFlushAt!) : NSNull()])
+    }
+
     // MARK: - Queue Info
     @objc
     func getQueueInfo(_ resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {

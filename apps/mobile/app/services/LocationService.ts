@@ -481,6 +481,14 @@ export class LocationService {
       console.warn('📍 Auto-start tracking skipped:', e);
     }
   }
+
+  async flushNativeQueue() {
+    try {
+      return await nativeLocationManager.flushQueue()
+    } catch (e) {
+      return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
+    }
+  }
 }
 
 // Export singleton instance

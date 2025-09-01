@@ -15,6 +15,7 @@ interface BackgroundLocationManager {
     lastQueuedAt?: string | null;
     lastFlushAt?: string | null;
   }>;
+  flushQueueNow(): Promise<{ queuedBefore: number; queuedAfter: number; lastFlushAt?: string | null }>;
 }
 
 interface LocationUpdateEvent {
@@ -188,6 +189,15 @@ class NativeLocationManager {
       return await RNBackgroundLocationManager.getQueueInfo()
     } catch (e) {
       return { queueCount: 0, lastQueuedAt: null, lastFlushAt: null }
+    }
+  }
+
+  async flushQueue() {
+    if (!this.isAvailable()) return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
+    try {
+      return await RNBackgroundLocationManager.flushQueueNow()
+    } catch (e) {
+      return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
     }
   }
 }
