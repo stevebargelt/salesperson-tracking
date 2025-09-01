@@ -431,6 +431,7 @@ export class LocationService {
             queueCount: queueInfo.queueCount,
             lastQueuedAt: queueInfo.lastQueuedAt,
             lastFlushAt: queueInfo.lastFlushAt,
+            lastStatusCode: queueInfo.lastStatusCode,
           }
         };
       } catch (error) {
@@ -487,6 +488,14 @@ export class LocationService {
       return await nativeLocationManager.flushQueue()
     } catch (e) {
       return { queuedBefore: 0, queuedAfter: 0, lastFlushAt: null }
+    }
+  }
+
+  async clearNativeQueue() {
+    try {
+      return await nativeLocationManager.clearQueue()
+    } catch (e) {
+      return { cleared: 0 }
     }
   }
 }

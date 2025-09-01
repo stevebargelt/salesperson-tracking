@@ -24,6 +24,7 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
   const [nativeStatus, setNativeStatus] = useState<string>("Checking...")
   const [nativeQueue, setNativeQueue] = useState<string>("")
   const [nativeQueueCount, setNativeQueueCount] = useState<number>(0)
+  const [lastHttpStatus, setLastHttpStatus] = useState<string>("—")
   
   const { authEmail } = useAuth()
 
@@ -115,6 +116,9 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
           const lastQ = detailedStatus.native.lastQueuedAt ? new Date(detailedStatus.native.lastQueuedAt).toLocaleTimeString() : '—'
           const lastF = detailedStatus.native.lastFlushAt ? new Date(detailedStatus.native.lastFlushAt).toLocaleTimeString() : '—'
           setNativeQueue(`Native Queue: ${q} • Last Queued: ${lastQ} • Last Flush: ${lastF}`)
+          if (typeof detailedStatus.native.lastStatusCode === 'number') {
+            setLastHttpStatus(String(detailedStatus.native.lastStatusCode))
+          }
         }
       } else {
         setNativeStatus(detailedStatus.native.reason || "Native: Not available")
@@ -226,6 +230,7 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
             {nativeQueue ? (
               <Text text={nativeQueue} style={themed($infoText)} />
             ) : null}
+            <Text text={`Last HTTP Status: ${lastHttpStatus}`} style={themed($infoText)} />
             <Text text="Battery Optimization: SLC Mode" style={themed($infoText)} />
           </View>
         }
@@ -254,6 +259,18 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
           const res = await locationService.flushNativeQueue()
           await updateQueueStatus()
           Alert.alert('Native Flush', `Queued before: ${res.queuedBefore}\nQueued after: ${res.queuedAfter}`)
+        }}
+        disabled={nativeQueueCount === 0}
+      />
+
+      <Button
+        text="Clear Native Queue"
+        style={themed($button)}
+        preset="default"
+        onPress={async () => {
+          const res = await locationService.clearNativeQueue()
+          await updateQueueStatus()
+          Alert.alert('Native Queue Cleared', `Removed ${res.cleared} items from queue`)
         }}
         disabled={nativeQueueCount === 0}
       />
