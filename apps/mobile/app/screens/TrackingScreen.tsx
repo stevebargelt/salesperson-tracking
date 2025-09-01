@@ -274,14 +274,6 @@ export const TrackingScreen: FC<TrackingScreenProps> = () => {
         }}
         disabled={nativeQueueCount === 0}
       />
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> d80d974
-=======
-
->>>>>>> b78995b (feat(mobile): add Developer/Debug screen with native queue tools and status; add Debug tab)
       {/* Help Text */}
       <Text
         text="When tracking is enabled, the app will automatically detect when you visit assigned accounts using Significant Location Changes (SLC) for optimal battery life."
