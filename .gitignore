@@ -149,3 +149,9 @@ CLAUDE.md
 apps/mobile/ios/.xcode.env
 apps/mobile/ios/Podfile.properties.json
 apps/mobile/ios/builds/
+
+# Ignore accidental compiled JS from TS sources
+apps/mobile/**/*.js
+apps/mobile/**/*.js.map
+libs/shared/**/src/**/*.js
+libs/shared/**/src/**/*.js.map
