@@ -19,6 +19,8 @@ if (__DEV__) {
 import "./utils/gestureHandler"
 
 import { useEffect, useState } from "react"
+import Constants from "expo-constants"
+import * as Sentry from "sentry-expo"
 import { useFonts } from "expo-font"
 import * as Linking from "expo-linking"
 import { KeyboardProvider } from "react-native-keyboard-controller"
@@ -57,6 +59,7 @@ const config = {
     },
   },
 }
+
 
 /**
  * This is the root component of our app.
@@ -131,3 +134,13 @@ export function App() {
     </SafeAreaProvider>
   )
 }
+// Initialize Sentry as early as possible
+Sentry.init({
+  dsn:
+    (Constants.expoConfig?.extra as any)?.sentryDsn ||
+    process.env.EXPO_PUBLIC_SENTRY_DSN ||
+    "https://c19c165e8c6de763a85c86a0b5863228@o4506355557859328.ingest.us.sentry.io/4509950484676608",
+  enableInExpoDevelopment: true,
+  debug: __DEV__,
+  tracesSampleRate: 1.0,
+})

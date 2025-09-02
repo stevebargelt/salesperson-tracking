@@ -74,6 +74,43 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: npx nx deploy-beta mobile
 
+      # Optional: Upload dSYMs to Sentry for better native stack traces
+      - name: Install Sentry CLI (optional)
+        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+
+      - name: Upload dSYMs to Sentry (optional)
+        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          LATEST_ARCHIVE=$(ls -t ~/Library/Developer/Xcode/Archives/*/*.xcarchive | head -n1 || true)
+          if [ -z "$LATEST_ARCHIVE" ]; then
+            echo "No xcarchive found; skipping dSYM upload"
+            exit 0
+          fi
+          echo "Uploading dSYMs from: $LATEST_ARCHIVE"
+          sentry-cli debug-files upload --include-sources "$LATEST_ARCHIVE/dSYMs"
+
+      # Optional: Upload JS source maps with sentry-expo
+      - name: Upload JS sourcemaps to Sentry (optional)
+        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" ios/mobile/Info.plist)
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/mobile/Info.plist)
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" ios/mobile/Info.plist)
+          export SENTRY_RELEASE="$BUNDLE@$VERSION+$BUILD"
+          export SENTRY_DIST="$BUILD"
+          npx sentry-expo upload-sourcemaps --appDirectory .
+
       - name: Upload Xcode/Gym Logs (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
