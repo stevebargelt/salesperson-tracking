@@ -27,6 +27,7 @@ export const SimpleDashboard: React.FC = () => {
     jobStatus?: any;
     lastChecked?: string;
     anomalies?: { longVisits: number; lowConfidence: number; lowEvents: number } | null;
+    metrics?: any | null;
   }>({});
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export const SimpleDashboard: React.FC = () => {
         jobStatus: result.jobStatus,
         lastChecked: result.lastChecked,
         anomalies: result.anomalies || null,
+        metrics: result.metrics || null,
       });
     } catch (e) {
       setProcError(e instanceof Error ? e.message : 'Failed to load processing status');
@@ -322,6 +324,36 @@ export const SimpleDashboard: React.FC = () => {
                 Trigger Processing
               </button>
             </div>
+          </div>
+
+          {/* Detection Metrics (24h) */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            marginTop: '1.5rem'
+          }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
+              Detection Metrics (24h)
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <StatCard title="Total Visits" value={procHealth.metrics?.total_visits ?? '—'} color="#10b981" />
+              <StatCard title="P50 Duration (min)" value={procHealth.metrics?.p50_duration ? Math.round(procHealth.metrics.p50_duration) : '—'} color="#3b82f6" />
+              <StatCard title="P95 Duration (min)" value={procHealth.metrics?.p95_duration ? Math.round(procHealth.metrics.p95_duration) : '—'} color="#8b5cf6" />
+              <StatCard title="Avg Confidence" value={procHealth.metrics?.avg_confidence ? Number(procHealth.metrics.avg_confidence).toFixed(2) : '—'} color="#f59e0b" />
+              <StatCard title="Overlap Visits" value={procHealth.metrics?.anomalies?.overlapVisits ?? '—'} color="#ef4444" />
+            </div>
+            {procHealth.metrics?.duration_buckets ? (
+              <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Buckets —
+                <span style={{ marginLeft: 8 }}>0–10: {procHealth.metrics.duration_buckets.m0_10}</span>
+                <span style={{ marginLeft: 8 }}>10–30: {procHealth.metrics.duration_buckets.m10_30}</span>
+                <span style={{ marginLeft: 8 }}>30–60: {procHealth.metrics.duration_buckets.m30_60}</span>
+                <span style={{ marginLeft: 8 }}>60–120: {procHealth.metrics.duration_buckets.m60_120}</span>
+                <span style={{ marginLeft: 8 }}>120+: {procHealth.metrics.duration_buckets.m120_plus}</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Anomalies (last 24h) */}

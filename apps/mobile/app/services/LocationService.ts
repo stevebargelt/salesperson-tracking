@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './SupabaseService';
 import { nativeLocationManager } from './NativeLocationManager';
 import Constants from 'expo-constants';
+import { calculateDistance } from '@salesperson-tracking/utils';
 
 interface QueuedLocationEvent {
   id: string;
@@ -27,6 +28,18 @@ export class LocationService {
   private useNativeModule = true; // Enable native iOS module for always-on tracking
   private nativeListenerCleanup: (() => void) | null = null;
   private static TRACKING_PREF_KEY = 'tracking_enabled';
+  // High-accuracy burst controls/state
+  private lastBurstPerAccount: Record<string, number> = {};
+  private lastAccountsRefreshAt = 0;
+  private accountsCache: Array<{ id: string; latitude: number; longitude: number; geofence_radius: number }> = [];
+  private burstInProgress = false;
+  private lastGlobalBurstAt = 0;
+
+  // Tunables
+  private static readonly BURST_PROXIMITY_MULTIPLIER = 2; // within 2x radius
+  private static readonly BURST_MIN_INTERVAL_PER_ACCOUNT_MS = 15 * 60 * 1000; // 15 min
+  private static readonly BURST_MIN_GLOBAL_INTERVAL_MS = 2 * 60 * 1000; // 2 min
+  private static readonly ACCOUNTS_REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 min
 
   private constructor() {
     // Private constructor for singleton
@@ -153,8 +166,8 @@ export class LocationService {
     // Listen for location updates from native module
     const locationCleanup = nativeLocationManager.onLocationUpdate((event) => {
       console.log('📍 Native location update received:', event);
-      // Native module handles saving to Supabase directly
-      // This is just for logging/debugging
+      // Kick a one-time high-accuracy burst if near an assigned account
+      this.onNativeLocationUpdate(event).catch(() => {});
     });
 
     // Listen for authorization changes
@@ -247,6 +260,99 @@ export class LocationService {
 
   private onLocationError(error: GeolocationError) {
     console.error('📍 Location error:', error);
+  }
+
+  // Handle native SLC updates: if near an assigned account, try a high-accuracy burst
+  private async onNativeLocationUpdate(event: {
+    user_id: string;
+    timestamp: string;
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    event_type: string;
+  }) {
+    try {
+      const now = Date.now();
+      if (now - this.lastGlobalBurstAt < LocationService.BURST_MIN_GLOBAL_INTERVAL_MS) return;
+      if (!this.userId) return;
+
+      await this.refreshAssignedAccountsIfNeeded();
+      if (this.accountsCache.length === 0) return;
+
+      const here = { latitude: event.latitude, longitude: event.longitude };
+      // Find closest assigned account by distance
+      let closest: { id: string; distance: number; radius: number } | null = null;
+      for (const acc of this.accountsCache) {
+        const dist = calculateDistance(here as any, { latitude: acc.latitude, longitude: acc.longitude } as any);
+        if (!closest || dist < closest.distance) {
+          closest = { id: acc.id, distance: dist, radius: acc.geofence_radius };
+        }
+      }
+      if (!closest) return;
+
+      const threshold = Math.max(closest.radius * LocationService.BURST_PROXIMITY_MULTIPLIER, 100);
+      if (closest.distance > threshold) return;
+
+      const last = this.lastBurstPerAccount[closest.id] || 0;
+      if (now - last < LocationService.BURST_MIN_INTERVAL_PER_ACCOUNT_MS) return;
+      if (this.burstInProgress) return;
+
+      this.burstInProgress = true;
+      this.lastGlobalBurstAt = now;
+      try {
+        const pos = await this.getCurrentPositionHighAccuracy();
+        const payload = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy || 0,
+          event_type: 'high_accuracy' as const,
+          timestamp: new Date().toISOString(),
+        };
+        await this.sendLocationEvent(payload);
+        this.lastBurstPerAccount[closest.id] = Date.now();
+        console.log('📍 High-accuracy burst sent near account', closest.id, 'acc', payload.accuracy);
+      } finally {
+        this.burstInProgress = false;
+      }
+    } catch (e) {
+      console.warn('📍 High-accuracy burst skipped:', e);
+    }
+  }
+
+  private async refreshAssignedAccountsIfNeeded() {
+    const now = Date.now();
+    if (now - this.lastAccountsRefreshAt < LocationService.ACCOUNTS_REFRESH_INTERVAL_MS) return;
+    if (!this.userId) return;
+    try {
+      const { supabaseHelpers } = await import('./SupabaseService');
+      const { data, error } = await supabaseHelpers.getUserAccounts(this.userId);
+      if (error) return;
+      const rows = (data || []) as any[];
+      const mapped: Array<{ id: string; latitude: number; longitude: number; geofence_radius: number }> = [];
+      for (const ua of rows) {
+        const acc = ua.accounts;
+        if (!acc) continue;
+        const id = acc.id || ua.account_id || ua.id;
+        const lat = Number(acc.latitude);
+        const lng = Number(acc.longitude);
+        const radius = typeof acc.geofence_radius === 'number' ? acc.geofence_radius : parseInt(String(acc.geofence_radius || '0'), 10) || 0;
+        if (isFinite(lat) && isFinite(lng) && radius >= 0) {
+          mapped.push({ id, latitude: lat, longitude: lng, geofence_radius: radius });
+        }
+      }
+      this.accountsCache = mapped;
+      this.lastAccountsRefreshAt = now;
+    } catch {}
+  }
+
+  private async getCurrentPositionHighAccuracy(): Promise<GeolocationResponse> {
+    return new Promise((resolve, reject) => {
+      Geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      );
+    });
   }
 
   // Send location event to server
