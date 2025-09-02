@@ -190,6 +190,7 @@ platform :ios do
 
     # Upload to TestFlight
     pilot(
+      api_key: @api_key,
       ipa: "./builds/production/SalespersonTracker-Production.ipa",
       changelog: changelog,
       distribute_external: false, # Only internal testers initially
