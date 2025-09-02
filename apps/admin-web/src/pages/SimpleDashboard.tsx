@@ -26,6 +26,7 @@ export const SimpleDashboard: React.FC = () => {
     recentVisitsCount?: number;
     jobStatus?: any;
     lastChecked?: string;
+    anomalies?: { longVisits: number; lowConfidence: number; lowEvents: number } | null;
   }>({});
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export const SimpleDashboard: React.FC = () => {
         recentVisitsCount: result.recentVisitsCount,
         jobStatus: result.jobStatus,
         lastChecked: result.lastChecked,
+        anomalies: result.anomalies || null,
       });
     } catch (e) {
       setProcError(e instanceof Error ? e.message : 'Failed to load processing status');
@@ -319,6 +321,24 @@ export const SimpleDashboard: React.FC = () => {
               >
                 Trigger Processing
               </button>
+            </div>
+          </div>
+
+          {/* Anomalies (last 24h) */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            marginTop: '1.5rem'
+          }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
+              Detection Anomalies (24h)
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <StatCard title="Long Visits (>8h)" value={procHealth.anomalies?.longVisits ?? '—'} color="#ef4444" />
+              <StatCard title="Low Confidence (<0.5)" value={procHealth.anomalies?.lowConfidence ?? '—'} color="#f59e0b" />
+              <StatCard title="Low Event Count (<2)" value={procHealth.anomalies?.lowEvents ?? '—'} color="#8b5cf6" />
             </div>
           </div>
         </div>

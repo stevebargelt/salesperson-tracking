@@ -5,6 +5,7 @@ import { SimpleLoginForm } from '../components/SimpleLoginForm';
 import { SimpleDashboard } from '../pages/SimpleDashboard';
 import { UserManagement } from '../pages/UserManagement';
 import { VisitsView } from '../pages/VisitsView';
+import { VisitInspector } from '../pages/VisitInspector';
 import { AccountManagement } from '../pages/AccountManagement';
 
 export function App() {
@@ -34,6 +35,7 @@ export function App() {
         <Route path="/users" element={<UserManagement />} />
         <Route path="/accounts" element={<AccountManagement />} />
         <Route path="/visits" element={<VisitsView />} />
+        <Route path="/visits/:visitId" element={<VisitInspector />} />
       </Routes>
     </Router>
   );
