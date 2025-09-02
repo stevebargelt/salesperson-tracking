@@ -213,11 +213,11 @@ platform :ios do
       }
     )
     
-    # Notify team
-    slack(
-      message: "🎉 New build #{get_build_number} deployed to TestFlight!",
-      success: true
-    ) if ENV['SLACK_WEBHOOK_URL']
+    # # Notify team
+    # slack(
+    #   message: "🎉 New build #{get_build_number} deployed to TestFlight!",
+    #   success: true
+    # ) if ENV['SLACK_WEBHOOK_URL']
   end
 
   # ========================================
@@ -250,10 +250,10 @@ platform :ios do
     push_git_tags
     
     # Notify team
-    slack(
-      message: "🚀 App #{tag_name} uploaded to App Store Connect!",
-      success: true
-    ) if ENV['SLACK_WEBHOOK_URL']
+    # slack(
+    #   message: "🚀 App #{tag_name} uploaded to App Store Connect!",
+    #   success: true
+    # ) if ENV['SLACK_WEBHOOK_URL']
   end
 
   # ========================================
@@ -278,11 +278,11 @@ platform :ios do
   # ERROR HANDLING
   # ========================================
 
-  error do |lane, exception|
-    slack(
-      message: "❌ Lane #{lane} failed: #{exception.message}",
-      success: false
-    ) if ENV['SLACK_WEBHOOK_URL']
-  end
+  # error do |lane, exception|
+  #   slack(
+  #     message: "❌ Lane #{lane} failed: #{exception.message}",
+  #     success: false
+  #   ) if ENV['SLACK_WEBHOOK_URL']
+  # end
 
 end
