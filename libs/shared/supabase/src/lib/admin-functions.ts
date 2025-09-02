@@ -66,7 +66,7 @@ export const adminFunctions = {
       const since24h = new Date();
       since24h.setHours(since24h.getHours() - 24);
 
-      const [unprocessedResult, recentVisitsResult, jobStatusResult, anomaliesResult] = await Promise.all([
+      const [unprocessedResult, recentVisitsResult, jobStatusResult, anomaliesResult, metricsResult] = await Promise.all([
         this.getUnprocessedEventCount(),
         this.getRecentProcessingActivity(1), // Last hour
         this.getProcessingJobStatus(),
@@ -82,7 +82,8 @@ export const adminFunctions = {
           const lowConfidence = rows.filter((r: any) => r.detection_confidence != null && Number(r.detection_confidence) < 0.5).length;
           const lowEvents = rows.filter((r: any) => r.detection_event_count != null && Number(r.detection_event_count) < 2).length;
           return { data: { longVisits, lowConfidence, lowEvents } } as any;
-        })()
+        })(),
+        supabase.rpc('get_detection_metrics', { hours_back: 24 })
       ]);
 
       return {
@@ -91,6 +92,7 @@ export const adminFunctions = {
         jobStatus: jobStatusResult.data?.[0] || null,
         lastChecked: new Date().toISOString(),
         anomalies: anomaliesResult.data || null,
+        metrics: metricsResult.data || null,
         error: unprocessedResult.error || recentVisitsResult.error || jobStatusResult.error
       };
     } catch (error) {
