@@ -44,8 +44,8 @@ copyright "© 2024 Harebrained Apps. All rights reserved."
 primary_category "BUSINESS"
 secondary_category "PRODUCTIVITY"
 
-# Age rating - Business app with location tracking
-app_rating_config_path "./metadata/app_rating_config.json"
+# Age rating config removed for CI deliver with skip_metadata
+# If needed later, re-add with a valid path and file.
 
 # Release notes directory
 release_notes({
