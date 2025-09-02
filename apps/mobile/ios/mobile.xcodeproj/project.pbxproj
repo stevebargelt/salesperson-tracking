@@ -361,7 +361,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_TEAM = DAV93N6F9B;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = DAV93N6F9B;
 				ENABLE_BITCODE = NO;
@@ -404,7 +404,7 @@
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_TEAM = DAV93N6F9B;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = DAV93N6F9B;
 				INFOPLIST_FILE = mobile/Info.plist;
