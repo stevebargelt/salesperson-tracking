@@ -220,6 +220,21 @@ export const VisitsView: React.FC = () => {
                     <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
                       {visit.accounts.address}
                     </td>
+                    <td style={{ padding: '1rem' }}>
+                      <a
+                        href={`/visits/${visit.id}`}
+                        style={{
+                          padding: '0.25rem 0.5rem',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.75rem',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        Inspect
+                      </a>
+                    </td>
                   </tr>
                 ))}
               </tbody>
