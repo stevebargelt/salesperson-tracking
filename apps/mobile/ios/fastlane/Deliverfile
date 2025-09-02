@@ -9,18 +9,33 @@ username "steve@stevebargelt.com"
 # App Store metadata
 app_version "1.0.0"
 
-# App description
-description "Professional location tracking app for field sales teams. Features always-on background location tracking, automatic visit detection, and comprehensive analytics for sales performance monitoring."
+# App description (localized)
+description({
+  "default" => "Professional location tracking app for field sales teams. Features always-on background location tracking, automatic visit detection, and comprehensive analytics for sales performance monitoring.",
+  "en-US" => "Professional location tracking app for field sales teams. Features always-on background location tracking, automatic visit detection, and comprehensive analytics for sales performance monitoring."
+})
 
-# Keywords for App Store search
-keywords "sales, tracking, location, field service, CRM, GPS, business, productivity"
+# Keywords for App Store search (localized arrays)
+keywords({
+  "default" => ["sales", "tracking", "location", "field service", "CRM", "GPS", "business", "productivity"],
+  "en-US" => ["sales", "tracking", "location", "field service", "CRM", "GPS", "business", "productivity"]
+})
 
-# Support and marketing URLs
-support_url "https://github.com/stevebargelt/salesperson-tracking"
-marketing_url "https://github.com/stevebargelt/salesperson-tracking"
+# Support and marketing URLs (localized)
+support_url({
+  "default" => "https://github.com/stevebargelt/salesperson-tracking",
+  "en-US" => "https://github.com/stevebargelt/salesperson-tracking"
+})
+marketing_url({
+  "default" => "https://github.com/stevebargelt/salesperson-tracking",
+  "en-US" => "https://github.com/stevebargelt/salesperson-tracking"
+})
 
-# Privacy policy (required for location-based apps)
-privacy_url "https://github.com/stevebargelt/salesperson-tracking/blob/main/PRIVACY_POLICY.md"
+# Privacy policy (localized)
+privacy_url({
+  "default" => "https://github.com/stevebargelt/salesperson-tracking/blob/main/PRIVACY_POLICY.md",
+  "en-US" => "https://github.com/stevebargelt/salesperson-tracking/blob/main/PRIVACY_POLICY.md"
+})
 
 # Copyright notice
 copyright "© 2024 Harebrained Apps. All rights reserved."
