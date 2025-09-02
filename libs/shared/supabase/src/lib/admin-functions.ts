@@ -63,14 +63,26 @@ export const adminFunctions = {
    */
   async getProcessingHealthMetrics() {
     try {
-      const [
-        unprocessedResult,
-        recentVisitsResult,
-        jobStatusResult
-      ] = await Promise.all([
+      const since24h = new Date();
+      since24h.setHours(since24h.getHours() - 24);
+
+      const [unprocessedResult, recentVisitsResult, jobStatusResult, anomaliesResult] = await Promise.all([
         this.getUnprocessedEventCount(),
         this.getRecentProcessingActivity(1), // Last hour
-        this.getProcessingJobStatus()
+        this.getProcessingJobStatus(),
+        (async () => {
+          // Anomalies in last 24h
+          const { data, error } = await supabase
+            .from('visits')
+            .select('id, duration_minutes, detection_confidence, detection_event_count, created_at')
+            .gte('created_at', since24h.toISOString());
+          if (error) return { error } as any;
+          const rows = data || [];
+          const longVisits = rows.filter((r: any) => (r.duration_minutes ?? 0) > 480).length; // > 8h
+          const lowConfidence = rows.filter((r: any) => r.detection_confidence != null && Number(r.detection_confidence) < 0.5).length;
+          const lowEvents = rows.filter((r: any) => r.detection_event_count != null && Number(r.detection_event_count) < 2).length;
+          return { data: { longVisits, lowConfidence, lowEvents } } as any;
+        })()
       ]);
 
       return {
@@ -78,6 +90,7 @@ export const adminFunctions = {
         recentVisitsCount: recentVisitsResult.data?.length || 0,
         jobStatus: jobStatusResult.data?.[0] || null,
         lastChecked: new Date().toISOString(),
+        anomalies: anomaliesResult.data || null,
         error: unprocessedResult.error || recentVisitsResult.error || jobStatusResult.error
       };
     } catch (error) {
