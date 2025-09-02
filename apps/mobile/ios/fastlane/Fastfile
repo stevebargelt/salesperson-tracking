@@ -88,8 +88,21 @@ platform :ios do
     # Sync certificates
     sync_certificates
     
-    # Increment build number
-    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    # Ensure build number is higher than what's on App Store Connect for the current version
+    version = get_version_number(xcodeproj: "mobile.xcodeproj")
+    begin
+      latest = app_store_build_number(
+        api_key: @api_key,
+        app_identifier: "com.harebrained-apps.salesforcetracker",
+        version: version,
+        platform: "ios"
+      )
+      new_build = (latest.to_i + 1).to_s
+      increment_build_number(xcodeproj: "mobile.xcodeproj", build_number: new_build)
+    rescue => e
+      UI.message("Could not fetch App Store build number (#{e.message}); incrementing locally")
+      increment_build_number(xcodeproj: "mobile.xcodeproj")
+    end
     
     # Build the app for development
     gym(
@@ -107,8 +120,21 @@ platform :ios do
     # Sync certificates
     sync_certificates
     
-    # Increment build number
-    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    # Ensure build number is higher than what's on App Store Connect for the current version
+    version = get_version_number(xcodeproj: "mobile.xcodeproj")
+    begin
+      latest = app_store_build_number(
+        api_key: @api_key,
+        app_identifier: "com.harebrained-apps.salesforcetracker",
+        version: version,
+        platform: "ios"
+      )
+      new_build = (latest.to_i + 1).to_s
+      increment_build_number(xcodeproj: "mobile.xcodeproj", build_number: new_build)
+    rescue => e
+      UI.message("Could not fetch App Store build number (#{e.message}); incrementing locally")
+      increment_build_number(xcodeproj: "mobile.xcodeproj")
+    end
     
     # Build the app
     gym(
@@ -126,8 +152,21 @@ platform :ios do
     # Sync certificates
     sync_certificates
     
-    # Increment build number
-    increment_build_number(xcodeproj: "mobile.xcodeproj")
+    # Ensure build number is higher than what's on App Store Connect for the current version
+    version = get_version_number(xcodeproj: "mobile.xcodeproj")
+    begin
+      latest = app_store_build_number(
+        api_key: @api_key,
+        app_identifier: "com.harebrained-apps.salesforcetracker",
+        version: version,
+        platform: "ios"
+      )
+      new_build = (latest.to_i + 1).to_s
+      increment_build_number(xcodeproj: "mobile.xcodeproj", build_number: new_build)
+    rescue => e
+      UI.message("Could not fetch App Store build number (#{e.message}); incrementing locally")
+      increment_build_number(xcodeproj: "mobile.xcodeproj")
+    end
     
     # Update code signing for Release configuration
     update_code_signing_settings(
