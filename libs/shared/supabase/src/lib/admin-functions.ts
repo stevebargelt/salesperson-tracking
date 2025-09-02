@@ -4,6 +4,24 @@ import { supabase } from './supabase';
  * Admin functions for monitoring and managing backend processing
  */
 export const adminFunctions = {
+  // Detection settings (pilot overrides)
+  async getDetectionSettings(userId: string) {
+    const { data, error } = await supabase
+      .from('detection_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return { data, error };
+  },
+
+  async upsertDetectionSettings(userId: string, payload: any) {
+    const { data, error } = await supabase
+      .from('detection_settings')
+      .upsert({ user_id: userId, ...payload, updated_at: new Date().toISOString() })
+      .select('*')
+      .maybeSingle();
+    return { data, error };
+  },
   /**
    * Get the status of the automated location processing job
    */
