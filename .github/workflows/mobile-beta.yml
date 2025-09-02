@@ -82,3 +82,4 @@ jobs:
           path: |
             ~/Library/Logs/gym/**/*
             ~/Library/Logs/scan/**/*
+            ~/Library/Logs/fastlane/**/*
