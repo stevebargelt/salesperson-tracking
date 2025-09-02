@@ -14,6 +14,11 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 90
     environment: production
+    env:
+      # Expose Sentry values as env so we can branch on env.* in step if:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -77,16 +82,12 @@ jobs:
 
       # Optional: Upload dSYMs to Sentry for better native stack traces
       - name: Install Sentry CLI (optional)
-        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
+        if: ${{ success() && env.SENTRY_AUTH_TOKEN != '' }}
         run: |
           curl -sL https://sentry.io/get-cli/ | bash
 
       - name: Upload dSYMs to Sentry (optional)
-        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        if: ${{ success() && env.SENTRY_AUTH_TOKEN != '' }}
         run: |
           LATEST_ARCHIVE=$(ls -t ~/Library/Developer/Xcode/Archives/*/*.xcarchive | head -n1 || true)
           if [ -z "$LATEST_ARCHIVE" ]; then
@@ -98,12 +99,8 @@ jobs:
 
       # Optional: Upload JS source maps with sentry-expo
       - name: Upload JS sourcemaps to Sentry (optional)
-        if: ${{ success() && secrets.SENTRY_AUTH_TOKEN != '' }}
+        if: ${{ success() && env.SENTRY_AUTH_TOKEN != '' }}
         working-directory: apps/mobile
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" ios/mobile/Info.plist)
           VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/mobile/Info.plist)
