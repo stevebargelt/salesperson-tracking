@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@salesperson-tracking/supabase';
-import type { Profile, CreateProfileRequest } from '@salesperson-tracking/types';
+import { adminFunctions } from '@salesperson-tracking/supabase';
+import type { Profile } from '@salesperson-tracking/types';
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<Profile[]>([]);
@@ -17,6 +18,11 @@ export const UserManagement: React.FC = () => {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Detection settings editor state (pilot overrides)
+  const [openSettingsUser, setOpenSettingsUser] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, any>>({});
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -37,6 +43,44 @@ export const UserManagement: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
       setLoading(false);
+    }
+  };
+
+  const loadUserSettings = async (userId: string) => {
+    try {
+      setSettingsError(null);
+      setSettingsLoading(true);
+      const { data, error } = await adminFunctions.getDetectionSettings(userId);
+      if (error) throw error as any;
+      setSettings({
+        enabled: data?.enabled ?? true,
+        min_dwell_minutes: data?.min_dwell_minutes ?? 10,
+        gap_minutes: data?.gap_minutes ?? 60,
+        buffer_meters: data?.buffer_meters ?? 50,
+        min_radius_m: data?.min_radius_m ?? 50,
+        max_radius_m: data?.max_radius_m ?? 500,
+        max_duration_minutes: data?.max_duration_minutes ?? 480,
+        speed_threshold_kmh: data?.speed_threshold_kmh ?? 45,
+      });
+    } catch (e: any) {
+      setSettingsError(e?.message || 'Failed to load settings');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const saveUserSettings = async (userId: string) => {
+    try {
+      setSettingsError(null);
+      setSettingsLoading(true);
+      const payload = { ...settings };
+      const { error } = await adminFunctions.upsertDetectionSettings(userId, payload);
+      if (error) throw error as any;
+      setOpenSettingsUser(null);
+    } catch (e: any) {
+      setSettingsError(e?.message || 'Failed to save settings');
+    } finally {
+      setSettingsLoading(false);
     }
   };
 
@@ -389,23 +433,79 @@ export const UserManagement: React.FC = () => {
                     </td>
                     <td style={{ padding: '1rem' }}>
                       {user.role !== 'admin' && (
-                        <button
-                          onClick={() => toggleUserStatus(user.id, user.is_active)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: user.is_active ? '#ef4444' : '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {user.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => toggleUserStatus(user.id, user.is_active)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              backgroundColor: user.is_active ? '#ef4444' : '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {user.is_active ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={async () => { const next = openSettingsUser === user.id ? null : user.id; setOpenSettingsUser(next); if (next) await loadUserSettings(user.id); }}
+                            style={{
+                              marginLeft: '0.5rem',
+                              padding: '0.25rem 0.5rem',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Settings
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
+                  {openSettingsUser === user.id && (
+                    <tr>
+                      <td colSpan={6} style={{ background: '#f9fafb' }}>
+                        <div style={{ padding: '0.75rem 1rem' }}>
+                          <h4 style={{ marginBottom: 8 }}>Detection Settings</h4>
+                          {settingsError && <div style={{ color: '#991b1b', marginBottom: 8 }}>{settingsError}</div>}
+                          {settingsLoading ? (
+                            <div>Loading…</div>
+                          ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                              {[
+                                { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+                                { key: 'min_dwell_minutes', label: 'Min Dwell (min)' },
+                                { key: 'gap_minutes', label: 'Gap (min)' },
+                                { key: 'buffer_meters', label: 'Buffer (m)' },
+                                { key: 'min_radius_m', label: 'Min Radius (m)' },
+                                { key: 'max_radius_m', label: 'Max Radius (m)' },
+                                { key: 'max_duration_minutes', label: 'Max Duration (min)' },
+                                { key: 'speed_threshold_kmh', label: 'Speed Threshold (km/h)' },
+                              ].map((f) => (
+                                <label key={String(f.key)} style={{ fontSize: 12, color: '#374151' }}>
+                                  {f.label}
+                                  {f.type === 'checkbox' ? (
+                                    <input type="checkbox" checked={!!settings[f.key]} onChange={(e) => setSettings(prev => ({ ...prev, [f.key]: e.target.checked }))} style={{ marginLeft: 8 }} />
+                                  ) : (
+                                    <input type="number" value={settings[f.key] ?? ''} onChange={(e) => setSettings(prev => ({ ...prev, [f.key]: e.target.value === '' ? null : Number(e.target.value) }))} style={{ marginLeft: 8, width: '100%' }} />
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ marginTop: 8 }}>
+                            <button onClick={() => user.id && saveUserSettings(user.id)} disabled={settingsLoading} style={{ padding: '0.25rem 0.5rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>Save</button>
+                            <button onClick={() => setOpenSettingsUser(null)} style={{ marginLeft: 8, padding: '0.25rem 0.5rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>Close</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 ))}
               </tbody>
             </table>
